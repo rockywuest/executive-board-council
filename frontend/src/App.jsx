@@ -28,53 +28,75 @@ const EXECUTIVE_INFO = {
 
 function ExecutiveCard({ role, title, response, isExpanded, onToggle }) {
   const info = EXECUTIVE_INFO[role] || { title: role, german: '', color: '#666', icon: '👤' }
+  const cardId = `exec-card-${role}`
 
   return (
-    <div className="executive-card" style={{ borderLeftColor: info.color }}>
-      <div className="executive-header" onClick={onToggle}>
+    <article
+      className="executive-card"
+      style={{ borderLeftColor: info.color }}
+      aria-labelledby={`${cardId}-title`}
+    >
+      <button
+        className="executive-header"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-controls={`${cardId}-content`}
+        type="button"
+      >
         <div className="executive-info">
-          <span className="executive-icon">{info.icon}</span>
+          <span className="executive-icon" aria-hidden="true">{info.icon}</span>
           <div>
-            <h3>{info.title}</h3>
+            <h3 id={`${cardId}-title`}>{info.title}</h3>
             <p className="german-title">{info.german}</p>
           </div>
         </div>
-        <button className="toggle-btn">
+        <span className="toggle-btn" aria-hidden="true">
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </button>
-      </div>
+        </span>
+      </button>
       {isExpanded && (
-        <div className="executive-content">
+        <div id={`${cardId}-content`} className="executive-content" role="region">
           <ReactMarkdown>{response}</ReactMarkdown>
         </div>
       )}
-    </div>
+    </article>
   )
 }
 
 function EvaluationCard({ role, title, evaluation, isExpanded, onToggle }) {
   const info = EXECUTIVE_INFO[role] || { title: role, german: '', color: '#666', icon: '👤' }
+  const cardId = `eval-card-${role}`
 
   return (
-    <div className="evaluation-card" style={{ borderLeftColor: info.color }}>
-      <div className="executive-header" onClick={onToggle}>
+    <article
+      className="evaluation-card"
+      style={{ borderLeftColor: info.color }}
+      aria-labelledby={`${cardId}-title`}
+    >
+      <button
+        className="executive-header"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-controls={`${cardId}-content`}
+        type="button"
+      >
         <div className="executive-info">
-          <span className="executive-icon">{info.icon}</span>
+          <span className="executive-icon" aria-hidden="true">{info.icon}</span>
           <div>
-            <h3>Evaluation by {info.title}</h3>
+            <h3 id={`${cardId}-title`}>Evaluation by {info.title}</h3>
             <p className="german-title">{info.german}</p>
           </div>
         </div>
-        <button className="toggle-btn">
+        <span className="toggle-btn" aria-hidden="true">
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </button>
-      </div>
+        </span>
+      </button>
       {isExpanded && (
-        <div className="executive-content">
+        <div id={`${cardId}-content`} className="executive-content" role="region">
           <ReactMarkdown>{evaluation}</ReactMarkdown>
         </div>
       )}
-    </div>
+    </article>
   )
 }
 
@@ -116,10 +138,15 @@ function FileUploadZone({ files, setFiles }) {
         <div className="file-list">
           {files.map((file, index) => (
             <div key={index} className="file-item">
-              <FileText size={16} />
+              <FileText size={16} aria-hidden="true" />
               <span>{file.name}</span>
-              <button onClick={() => removeFile(index)} className="remove-file">
-                <X size={14} />
+              <button
+                onClick={() => removeFile(index)}
+                className="remove-file"
+                aria-label={`Remove ${file.name}`}
+                type="button"
+              >
+                <X size={14} aria-hidden="true" />
               </button>
             </div>
           ))}
@@ -130,14 +157,22 @@ function FileUploadZone({ files, setFiles }) {
 }
 
 function StageProgress({ currentStage, stages }) {
+  const currentStageName = currentStage >= 0 && currentStage < stages.length
+    ? stages[currentStage]
+    : 'Processing'
+
   return (
-    <div className="stage-progress">
+    <div className="stage-progress" role="progressbar" aria-valuenow={currentStage + 1} aria-valuemin="1" aria-valuemax={stages.length}>
+      <div className="sr-only" aria-live="polite">
+        Currently processing: {currentStageName}
+      </div>
       {stages.map((stage, index) => (
         <div
           key={index}
           className={`stage-item ${currentStage > index ? 'completed' : ''} ${currentStage === index ? 'active' : ''}`}
+          aria-current={currentStage === index ? 'step' : undefined}
         >
-          <div className="stage-indicator">
+          <div className="stage-indicator" aria-hidden="true">
             {currentStage > index ? (
               <CheckCircle2 size={20} />
             ) : currentStage === index ? (
@@ -353,7 +388,11 @@ function App() {
           </div>
 
           <form onSubmit={handleSubmit}>
+            <label htmlFor="situation-input" className="sr-only">
+              Business Situation Description
+            </label>
             <textarea
+              id="situation-input"
               value={situation}
               onChange={(e) => setSituation(e.target.value)}
               placeholder="Describe the business situation, challenge, or decision you need guidance on...
@@ -361,7 +400,11 @@ function App() {
 Example: We are considering expanding our production capacity by building a new factory in Eastern Europe. What factors should we consider?"
               rows={6}
               disabled={isLoading}
+              aria-describedby="situation-help"
             />
+            <p id="situation-help" className="sr-only">
+              Enter your business situation or challenge. The executive board will analyze it from multiple perspectives.
+            </p>
 
             <FileUploadZone files={files} setFiles={setFiles} />
 

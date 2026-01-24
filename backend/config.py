@@ -1,18 +1,28 @@
 """Configuration for the Executive Board Council."""
 
 import os
+import logging
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# OpenRouter API key
+logger = logging.getLogger(__name__)
+
+# OpenRouter API key with validation
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+if not OPENROUTER_API_KEY:
+    logger.warning("OPENROUTER_API_KEY environment variable is not set. API calls will fail.")
+elif not OPENROUTER_API_KEY.startswith("sk-or-"):
+    logger.warning("OPENROUTER_API_KEY does not appear to be valid (should start with 'sk-or-')")
 
 # OpenRouter API endpoint
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Data directory for conversation storage
-DATA_DIR = "data/conversations"
+# Data directory for conversation storage (use absolute path relative to project root)
+_PROJECT_ROOT = Path(__file__).parent.parent
+DATA_DIR = str(_PROJECT_ROOT / "data" / "conversations")
 
 # Executive Board Members - each role uses a different LLM for diverse perspectives
 # You can customize these models based on availability and preference

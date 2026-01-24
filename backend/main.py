@@ -1,10 +1,12 @@
 """FastAPI backend for Executive Board Council."""
 
+import logging
+import re
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from typing import List, Dict, Any
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Dict, Any, Optional
 import uuid
 import json
 import asyncio
@@ -19,26 +21,43 @@ from .council import (
     calculate_aggregate_rankings
 )
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="Executive Board Council API")
 
 # Enable CORS for local development
+# NOTE: Restrict methods and headers in production
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
 class CreateMeetingRequest(BaseModel):
     """Request to create a new executive board meeting."""
-    pass
+    title: Optional[str] = Field(default=None, max_length=200)
 
 
 class SubmitSituationRequest(BaseModel):
     """Request to submit a business situation for board discussion."""
-    content: str
+    content: str = Field(
+        ...,
+        min_length=10,
+        max_length=50000,
+        description="Business situation to discuss (10-50000 characters)"
+    )
+
+    @field_validator('content')
+    @classmethod
+    def validate_content(cls, v: str) -> str:
+        """Validate content is not just whitespace."""
+        if not v or not v.strip():
+            raise ValueError('Content cannot be empty or whitespace only')
+        return v.strip()
 
 
 class MeetingMetadata(BaseModel):
@@ -77,9 +96,20 @@ async def create_meeting(request: CreateMeetingRequest):
     return meeting
 
 
+def validate_meeting_id(meeting_id: str) -> bool:
+    """Validate meeting ID is a valid UUID."""
+    try:
+        uuid.UUID(meeting_id)
+        return True
+    except ValueError:
+        return False
+
+
 @app.get("/api/meetings/{meeting_id}", response_model=Meeting)
 async def get_meeting(meeting_id: str):
     """Get a specific meeting with all its discussions."""
+    if not validate_meeting_id(meeting_id):
+        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
     meeting = storage.get_meeting(meeting_id)
     if meeting is None:
         raise HTTPException(status_code=404, detail="Meeting not found")
@@ -92,6 +122,10 @@ async def submit_situation(meeting_id: str, request: SubmitSituationRequest):
     Submit a business situation and run the 3-stage executive board process.
     Returns the complete response with all stages.
     """
+    # Validate meeting ID format
+    if not validate_meeting_id(meeting_id):
+        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
+
     # Check if meeting exists
     meeting = storage.get_meeting(meeting_id)
     if meeting is None:
@@ -136,6 +170,10 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
     Submit a business situation and stream the 3-stage executive board process.
     Returns Server-Sent Events as each stage completes.
     """
+    # Validate meeting ID format
+    if not validate_meeting_id(meeting_id):
+        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
+
     # Check if meeting exists
     meeting = storage.get_meeting(meeting_id)
     if meeting is None:
@@ -188,8 +226,9 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
             yield f"data: {json.dumps({'type': 'complete'})}\n\n"
 
         except Exception as e:
-            # Send error event
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            # Log full error internally, send generic message to client
+            logger.error(f"Stream processing error: {type(e).__name__}: {e}")
+            yield f"data: {json.dumps({'type': 'error', 'message': 'Processing failed. Please try again.'})}\n\n"
 
     return StreamingResponse(
         event_generator(),

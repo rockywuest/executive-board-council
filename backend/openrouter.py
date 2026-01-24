@@ -1,8 +1,12 @@
 """OpenRouter API client for making LLM requests."""
 
+import asyncio
+import logging
 import httpx
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from .config import OPENROUTER_API_KEY, OPENROUTER_API_URL
+
+logger = logging.getLogger(__name__)
 
 
 async def query_model(
@@ -21,6 +25,10 @@ async def query_model(
     Returns:
         Response dict with 'content' and optional 'reasoning_details', or None if failed
     """
+    if not OPENROUTER_API_KEY:
+        logger.error("OPENROUTER_API_KEY is not configured")
+        return None
+
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
@@ -41,15 +49,35 @@ async def query_model(
             response.raise_for_status()
 
             data = response.json()
-            message = data['choices'][0]['message']
+
+            # Safe response parsing with validation
+            choices = data.get('choices')
+            if not choices or len(choices) == 0:
+                logger.error(f"Model {model} returned empty choices")
+                return None
+
+            message = choices[0].get('message')
+            if not message:
+                logger.error(f"Model {model} returned no message in choice")
+                return None
+
+            content = message.get('content')
+            if not content:
+                logger.warning(f"Model {model} returned empty content")
 
             return {
-                'content': message.get('content'),
+                'content': content or '',
                 'reasoning_details': message.get('reasoning_details')
             }
 
+    except httpx.TimeoutException:
+        logger.error(f"Timeout querying model {model} after {timeout}s")
+        return None
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP error querying model {model}: {e.response.status_code}")
+        return None
     except Exception as e:
-        print(f"Error querying model {model}: {e}")
+        logger.error(f"Error querying model {model}: {type(e).__name__}")
         return None
 
 
@@ -86,7 +114,7 @@ async def query_executives_parallel(
     user_query: str
 ) -> Dict[str, Optional[Dict[str, Any]]]:
     """
-    Query all executive roles in parallel.
+    Query all executive roles in true parallel using asyncio.gather.
 
     Args:
         executives: Dict mapping role_key to {'model': ..., 'persona': ...}
@@ -95,25 +123,29 @@ async def query_executives_parallel(
     Returns:
         Dict mapping role_key to response dict (or None if failed)
     """
-    import asyncio
-
-    async def query_one(role_key: str, config: Dict[str, str]):
-        return await query_executive(
+    async def query_one(role_key: str, config: Dict[str, str]) -> Tuple[str, Optional[Dict[str, Any]]]:
+        result = await query_executive(
             role_key,
             config['model'],
             config['persona'],
             user_query
         )
+        return role_key, result
 
-    # Create tasks for all executives
-    tasks = {
-        role_key: asyncio.create_task(query_one(role_key, config))
-        for role_key, config in executives.items()
-    }
+    # Create all query tasks
+    tasks = [query_one(role_key, config) for role_key, config in executives.items()]
 
-    # Wait for all to complete
+    # Execute ALL tasks in true parallel with asyncio.gather
+    # return_exceptions=True prevents one failure from cancelling others
+    results_list = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Convert results to dict, handling any exceptions
     results = {}
-    for role_key, task in tasks.items():
-        results[role_key] = await task
+    for item in results_list:
+        if isinstance(item, Exception):
+            logger.error(f"Executive query failed with exception: {type(item).__name__}")
+            continue
+        role_key, result = item
+        results[role_key] = result
 
     return results

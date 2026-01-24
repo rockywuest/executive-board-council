@@ -2,10 +2,14 @@
 
 import json
 import os
-from datetime import datetime
+import logging
+import tempfile
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from .config import DATA_DIR
+
+logger = logging.getLogger(__name__)
 
 
 def ensure_data_dir():
@@ -15,7 +19,28 @@ def ensure_data_dir():
 
 def get_meeting_path(meeting_id: str) -> str:
     """Get the file path for a meeting."""
+    # Validate meeting_id to prevent path traversal
+    if not meeting_id or '/' in meeting_id or '\\' in meeting_id or '..' in meeting_id:
+        raise ValueError(f"Invalid meeting ID: {meeting_id}")
     return os.path.join(DATA_DIR, f"{meeting_id}.json")
+
+
+def _atomic_write(path: str, data: Dict[str, Any]):
+    """Write data atomically using temp file + rename."""
+    ensure_data_dir()
+    dir_path = os.path.dirname(path)
+
+    # Write to temp file first, then rename (atomic on POSIX)
+    fd, temp_path = tempfile.mkstemp(dir=dir_path, suffix='.json')
+    try:
+        with os.fdopen(fd, 'w') as f:
+            json.dump(data, f, indent=2)
+        os.replace(temp_path, path)  # Atomic rename
+    except Exception:
+        # Clean up temp file on failure
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+        raise
 
 
 def create_meeting(meeting_id: str) -> Dict[str, Any]:
@@ -28,19 +53,16 @@ def create_meeting(meeting_id: str) -> Dict[str, Any]:
     Returns:
         New meeting dict
     """
-    ensure_data_dir()
-
     meeting = {
         "id": meeting_id,
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
         "title": "Executive Board Meeting",
         "discussions": []
     }
 
-    # Save to file
+    # Save to file atomically
     path = get_meeting_path(meeting_id)
-    with open(path, 'w') as f:
-        json.dump(meeting, f, indent=2)
+    _atomic_write(path, meeting)
 
     return meeting
 
@@ -53,29 +75,37 @@ def get_meeting(meeting_id: str) -> Optional[Dict[str, Any]]:
         meeting_id: Unique identifier for the meeting
 
     Returns:
-        Meeting dict or None if not found
+        Meeting dict or None if not found or corrupted
     """
-    path = get_meeting_path(meeting_id)
+    try:
+        path = get_meeting_path(meeting_id)
+    except ValueError:
+        logger.warning(f"Invalid meeting ID attempted: {meeting_id}")
+        return None
 
     if not os.path.exists(path):
         return None
 
-    with open(path, 'r') as f:
-        return json.load(f)
+    try:
+        with open(path, 'r') as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        logger.error(f"Corrupted meeting file {meeting_id}: {e}")
+        return None
+    except IOError as e:
+        logger.error(f"Error reading meeting file {meeting_id}: {e}")
+        return None
 
 
 def save_meeting(meeting: Dict[str, Any]):
     """
-    Save a meeting to storage.
+    Save a meeting to storage atomically.
 
     Args:
         meeting: Meeting dict to save
     """
-    ensure_data_dir()
-
     path = get_meeting_path(meeting['id'])
-    with open(path, 'w') as f:
-        json.dump(meeting, f, indent=2)
+    _atomic_write(path, meeting)
 
 
 def list_meetings() -> List[Dict[str, Any]]:
@@ -91,14 +121,21 @@ def list_meetings() -> List[Dict[str, Any]]:
     for filename in os.listdir(DATA_DIR):
         if filename.endswith('.json'):
             path = os.path.join(DATA_DIR, filename)
-            with open(path, 'r') as f:
-                data = json.load(f)
-                meetings.append({
-                    "id": data["id"],
-                    "created_at": data["created_at"],
-                    "title": data.get("title", "Executive Board Meeting"),
-                    "discussion_count": len(data["discussions"])
-                })
+            try:
+                with open(path, 'r') as f:
+                    data = json.load(f)
+                    meetings.append({
+                        "id": data["id"],
+                        "created_at": data["created_at"],
+                        "title": data.get("title", "Executive Board Meeting"),
+                        "discussion_count": len(data.get("discussions", []))
+                    })
+            except json.JSONDecodeError as e:
+                logger.warning(f"Skipping corrupted meeting file {filename}: {e}")
+                continue
+            except (KeyError, TypeError) as e:
+                logger.warning(f"Skipping malformed meeting file {filename}: {e}")
+                continue
 
     # Sort by creation time, newest first
     meetings.sort(key=lambda x: x["created_at"], reverse=True)
