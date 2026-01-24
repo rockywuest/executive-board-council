@@ -167,27 +167,39 @@ def add_board_response(
     meeting_id: str,
     stage1: List[Dict[str, Any]],
     stage2: List[Dict[str, Any]],
-    stage3: Dict[str, Any]
+    stage3: Dict[str, Any],
+    debate_results: Optional[List[Dict[str, Any]]] = None,
+    risk_matrix: Optional[Dict[str, Any]] = None
 ):
     """
-    Add the complete board response with all 3 stages.
+    Add the complete board response with all stages.
 
     Args:
         meeting_id: Meeting identifier
         stage1: List of individual executive perspectives
         stage2: List of cross-evaluations
         stage3: Council Speaker's final synthesis
+        debate_results: Optional debate responses from Stage 2.5
+        risk_matrix: Optional structured risk analysis
     """
     meeting = get_meeting(meeting_id)
     if meeting is None:
         raise ValueError(f"Meeting {meeting_id} not found")
 
-    meeting["discussions"].append({
+    board_response = {
         "role": "board",
         "stage1_perspectives": stage1,
         "stage2_evaluations": stage2,
         "stage3_synthesis": stage3
-    })
+    }
+
+    if debate_results is not None:
+        board_response["debate_results"] = debate_results
+
+    if risk_matrix is not None:
+        board_response["risk_matrix"] = risk_matrix
+
+    meeting["discussions"].append(board_response)
 
     save_meeting(meeting)
 
@@ -206,3 +218,29 @@ def update_meeting_title(meeting_id: str, title: str):
 
     meeting["title"] = title
     save_meeting(meeting)
+
+
+def delete_meeting(meeting_id: str) -> bool:
+    """
+    Delete a meeting from storage.
+
+    Args:
+        meeting_id: Meeting identifier
+
+    Returns:
+        True if deleted, False if not found
+    """
+    try:
+        path = get_meeting_path(meeting_id)
+    except ValueError:
+        return False
+
+    if not os.path.exists(path):
+        return False
+
+    try:
+        os.remove(path)
+        return True
+    except OSError as e:
+        logger.error(f"Error deleting meeting {meeting_id}: {e}")
+        return False

@@ -12,19 +12,27 @@ import json
 import asyncio
 
 from . import storage
+from .config import EXAMPLE_TEMPLATES, EXECUTIVE_ROLES
 from .council import (
     run_executive_board_meeting,
     generate_meeting_title,
     stage1_collect_perspectives,
     stage2_cross_evaluation,
+    stage2_5_debate,
     stage3_council_speaker_synthesis,
-    calculate_aggregate_rankings
+    calculate_aggregate_rankings,
+    generate_risk_matrix,
+    compare_scenarios
 )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Executive Board Council API")
+app = FastAPI(
+    title="Executive Board Council API",
+    description="Multi-LLM decision support system simulating a German executive board",
+    version="2.0.0"
+)
 
 # Enable CORS for local development
 # NOTE: Restrict methods and headers in production
@@ -50,6 +58,8 @@ class SubmitSituationRequest(BaseModel):
         max_length=50000,
         description="Business situation to discuss (10-50000 characters)"
     )
+    include_debate: bool = Field(default=True, description="Include debate stage (Stage 2.5)")
+    include_risk_matrix: bool = Field(default=True, description="Generate risk matrix")
 
     @field_validator('content')
     @classmethod
@@ -58,6 +68,18 @@ class SubmitSituationRequest(BaseModel):
         if not v or not v.strip():
             raise ValueError('Content cannot be empty or whitespace only')
         return v.strip()
+
+
+class CompareScenarioRequest(BaseModel):
+    """Request to compare multiple scenarios."""
+    scenarios: List[str] = Field(
+        ...,
+        min_length=2,
+        max_length=4,
+        description="2-4 scenarios to compare"
+    )
+    include_debate: bool = Field(default=False, description="Include debate stage (slower)")
+    include_risk_matrix: bool = Field(default=True, description="Include risk analysis")
 
 
 class MeetingMetadata(BaseModel):
@@ -76,10 +98,42 @@ class Meeting(BaseModel):
     discussions: List[Dict[str, Any]]
 
 
+class ExampleTemplate(BaseModel):
+    """Example situation template."""
+    id: str
+    name: str
+    category: str
+    description: str
+    prompt: str
+
+
 @app.get("/")
 async def root():
     """Health check endpoint."""
-    return {"status": "ok", "service": "Executive Board Council API"}
+    return {
+        "status": "ok",
+        "service": "Executive Board Council API",
+        "version": "2.0.0",
+        "features": ["debate_stage", "risk_matrix", "confidence_scores", "scenario_comparison", "devils_advocate"]
+    }
+
+
+@app.get("/api/templates", response_model=List[ExampleTemplate])
+async def get_templates():
+    """Get example situation templates."""
+    return EXAMPLE_TEMPLATES
+
+
+@app.get("/api/executives")
+async def get_executives():
+    """Get list of executive roles and their configuration."""
+    return {
+        role_key: {
+            "title": role_config["title"],
+            "model": role_config["model"]
+        }
+        for role_key, role_config in EXECUTIVE_ROLES.items()
+    }
 
 
 @app.get("/api/meetings", response_model=List[MeetingMetadata])
@@ -116,11 +170,22 @@ async def get_meeting(meeting_id: str):
     return meeting
 
 
+@app.delete("/api/meetings/{meeting_id}")
+async def delete_meeting(meeting_id: str):
+    """Delete a meeting."""
+    if not validate_meeting_id(meeting_id):
+        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
+    success = storage.delete_meeting(meeting_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    return {"status": "deleted", "meeting_id": meeting_id}
+
+
 @app.post("/api/meetings/{meeting_id}/discuss")
 async def submit_situation(meeting_id: str, request: SubmitSituationRequest):
     """
-    Submit a business situation and run the 3-stage executive board process.
-    Returns the complete response with all stages.
+    Submit a business situation and run the complete executive board process.
+    Includes: perspectives, cross-evaluation, optional debate, optional risk matrix, synthesis.
     """
     # Validate meeting ID format
     if not validate_meeting_id(meeting_id):
@@ -142,24 +207,31 @@ async def submit_situation(meeting_id: str, request: SubmitSituationRequest):
         title = await generate_meeting_title(request.content)
         storage.update_meeting_title(meeting_id, title)
 
-    # Run the 3-stage executive board process
-    stage1_results, stage2_results, stage3_result, metadata = await run_executive_board_meeting(
-        request.content
-    )
+    # Run the complete executive board process
+    stage1_results, stage2_results, stage3_result, metadata, debate_results, risk_matrix = \
+        await run_executive_board_meeting(
+            request.content,
+            include_debate=request.include_debate,
+            include_risk_matrix=request.include_risk_matrix
+        )
 
     # Add board response with all stages
     storage.add_board_response(
         meeting_id,
         stage1_results,
         stage2_results,
-        stage3_result
+        stage3_result,
+        debate_results=debate_results,
+        risk_matrix=risk_matrix
     )
 
     # Return the complete response with metadata
     return {
         "stage1_perspectives": stage1_results,
         "stage2_evaluations": stage2_results,
+        "stage2_5_debate": debate_results,
         "stage3_synthesis": stage3_result,
+        "risk_matrix": risk_matrix,
         "metadata": metadata
     }
 
@@ -167,7 +239,7 @@ async def submit_situation(meeting_id: str, request: SubmitSituationRequest):
 @app.post("/api/meetings/{meeting_id}/discuss/stream")
 async def submit_situation_stream(meeting_id: str, request: SubmitSituationRequest):
     """
-    Submit a business situation and stream the 3-stage executive board process.
+    Submit a business situation and stream the executive board process.
     Returns Server-Sent Events as each stage completes.
     """
     # Validate meeting ID format
@@ -192,7 +264,7 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
             if is_first_discussion:
                 title_task = asyncio.create_task(generate_meeting_title(request.content))
 
-            # Stage 1: Collect executive perspectives
+            # Stage 1: Collect executive perspectives (with confidence scores)
             yield f"data: {json.dumps({'type': 'stage1_start', 'message': 'Collecting executive perspectives...'})}\n\n"
             stage1_results = await stage1_collect_perspectives(request.content)
             yield f"data: {json.dumps({'type': 'stage1_complete', 'data': stage1_results})}\n\n"
@@ -203,9 +275,33 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
             aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_role)
             yield f"data: {json.dumps({'type': 'stage2_complete', 'data': stage2_results, 'metadata': {'label_to_role': label_to_role, 'aggregate_rankings': aggregate_rankings}})}\n\n"
 
+            # Stage 2.5: Debate (optional)
+            debate_results = None
+            if request.include_debate:
+                yield f"data: {json.dumps({'type': 'stage2_5_start', 'message': 'Executives debating and refining positions...'})}\n\n"
+                debate_results = await stage2_5_debate(request.content, stage1_results, stage2_results, label_to_role)
+                yield f"data: {json.dumps({'type': 'stage2_5_complete', 'data': debate_results})}\n\n"
+
+            # Risk Matrix (optional, run in parallel with other tasks)
+            risk_matrix = None
+            risk_task = None
+            if request.include_risk_matrix:
+                yield f"data: {json.dumps({'type': 'risk_matrix_start', 'message': 'Generating risk matrix...'})}\n\n"
+                risk_task = asyncio.create_task(generate_risk_matrix(request.content, stage1_results, stage2_results))
+
             # Stage 3: Council Speaker synthesis
             yield f"data: {json.dumps({'type': 'stage3_start', 'message': 'Council Speaker synthesizing final recommendation...'})}\n\n"
-            stage3_result = await stage3_council_speaker_synthesis(request.content, stage1_results, stage2_results)
+
+            # Wait for risk matrix if it was started
+            if risk_task:
+                risk_matrix = await risk_task
+                yield f"data: {json.dumps({'type': 'risk_matrix_complete', 'data': risk_matrix})}\n\n"
+
+            # Generate synthesis with all available data
+            stage3_result = await stage3_council_speaker_synthesis(
+                request.content, stage1_results, stage2_results,
+                debate_results=debate_results, risk_matrix=risk_matrix
+            )
             yield f"data: {json.dumps({'type': 'stage3_complete', 'data': stage3_result})}\n\n"
 
             # Wait for title generation if it was started
@@ -219,7 +315,9 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
                 meeting_id,
                 stage1_results,
                 stage2_results,
-                stage3_result
+                stage3_result,
+                debate_results=debate_results,
+                risk_matrix=risk_matrix
             )
 
             # Send completion event
@@ -238,6 +336,104 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
             "Connection": "keep-alive",
         }
     )
+
+
+@app.post("/api/compare")
+async def compare_scenarios_endpoint(request: CompareScenarioRequest):
+    """
+    Compare multiple business scenarios side-by-side.
+    Runs the council process on each scenario and generates a comparison.
+    """
+    if len(request.scenarios) < 2:
+        raise HTTPException(status_code=400, detail="At least 2 scenarios required")
+    if len(request.scenarios) > 4:
+        raise HTTPException(status_code=400, detail="Maximum 4 scenarios allowed")
+
+    result = await compare_scenarios(
+        request.scenarios,
+        include_debate=request.include_debate,
+        include_risk_matrix=request.include_risk_matrix
+    )
+
+    return result
+
+
+@app.get("/api/meetings/{meeting_id}/export")
+async def export_meeting(meeting_id: str, format: str = "json"):
+    """
+    Export a meeting in various formats.
+    Supported formats: json, markdown
+    """
+    if not validate_meeting_id(meeting_id):
+        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
+
+    meeting = storage.get_meeting(meeting_id)
+    if meeting is None:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+
+    if format == "json":
+        return meeting
+
+    elif format == "markdown":
+        md = generate_meeting_markdown(meeting)
+        return StreamingResponse(
+            iter([md]),
+            media_type="text/markdown",
+            headers={
+                "Content-Disposition": f"attachment; filename={meeting_id}.md"
+            }
+        )
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+
+
+def generate_meeting_markdown(meeting: Dict[str, Any]) -> str:
+    """Generate markdown export of a meeting."""
+    md = f"# Executive Board Meeting: {meeting['title']}\n\n"
+    md += f"**Date:** {meeting['created_at']}\n\n"
+    md += f"**Meeting ID:** {meeting['id']}\n\n"
+    md += "---\n\n"
+
+    for i, discussion in enumerate(meeting.get('discussions', []), 1):
+        if discussion.get('role') == 'user':
+            md += f"## Business Situation {i}\n\n"
+            md += f"{discussion.get('content', '')}\n\n"
+        elif discussion.get('role') == 'board':
+            md += "### Executive Perspectives\n\n"
+            for perspective in discussion.get('stage1_perspectives', []):
+                md += f"#### {perspective.get('title', perspective.get('role', 'Unknown'))}\n\n"
+                confidence = perspective.get('confidence', 'N/A')
+                md += f"**Confidence:** {confidence}\n\n"
+                md += f"{perspective.get('response', '')}\n\n"
+
+            md += "### Cross-Evaluations\n\n"
+            for evaluation in discussion.get('stage2_evaluations', []):
+                md += f"#### Evaluation by {evaluation.get('title', evaluation.get('role', 'Unknown'))}\n\n"
+                md += f"{evaluation.get('evaluation', '')}\n\n"
+
+            if discussion.get('debate_results'):
+                md += "### Debate Responses\n\n"
+                for debate in discussion['debate_results']:
+                    md += f"#### {debate.get('title', debate.get('role', 'Unknown'))} responds\n\n"
+                    md += f"{debate.get('response', '')}\n\n"
+
+            if discussion.get('risk_matrix', {}).get('risks'):
+                md += "### Risk Matrix\n\n"
+                md += "| Risk | Category | Likelihood | Impact | Owner |\n"
+                md += "|------|----------|------------|--------|-------|\n"
+                for risk in discussion['risk_matrix']['risks']:
+                    md += f"| {risk.get('description', '')} | {risk.get('category', '')} | "
+                    md += f"{risk.get('likelihood', '')} | {risk.get('impact', '')} | {risk.get('owner', '')} |\n"
+                md += "\n"
+
+            md += "### Final Recommendation\n\n"
+            md += f"{discussion.get('stage3_synthesis', {}).get('response', '')}\n\n"
+
+            md += "---\n\n"
+
+    md += "\n*Generated by Executive Board Council*\n"
+    return md
 
 
 if __name__ == "__main__":

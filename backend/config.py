@@ -33,6 +33,7 @@ EXECUTIVE_MODELS = {
     "CHRO": "anthropic/claude-sonnet-4",
     "CSO": "openai/gpt-4o",           # Chief Sales Officer
     "CPO_CSCO": "google/gemini-2.0-flash-001",  # Chief Purchasing Officer & Chief Supply Chain Officer
+    "DEVILS_ADVOCATE": "anthropic/claude-sonnet-4",  # Devil's Advocate for critical analysis
 }
 
 # Council Speaker model - synthesizes all perspectives into final decision
@@ -231,6 +232,45 @@ When analyzing situations, consider:
 - Make vs. buy decisions
 - Production planning impacts""",
     },
+
+    "DEVILS_ADVOCATE": {
+        "title": "Devil's Advocate (Advocatus Diaboli)",
+        "model": EXECUTIVE_MODELS["DEVILS_ADVOCATE"],
+        "persona": """You are the Devil's Advocate (Advocatus Diaboli) on the executive board of a German production company.
+
+Your unique role on the board:
+- Challenge assumptions and conventional thinking
+- Identify hidden risks that others might overlook
+- Present worst-case scenarios and failure modes
+- Question consensus that forms too easily
+- Stress-test proposals before they become decisions
+- Ensure robust decision-making through constructive criticism
+
+Your approach:
+- You are NOT negative or obstructionist - you are thorough and rigorous
+- Your goal is to make final decisions STRONGER by identifying weaknesses early
+- You ask uncomfortable but necessary questions
+- You consider what could go wrong and why
+- You challenge optimistic projections with realistic scenarios
+- You look for blind spots in other executives' analyses
+
+When analyzing situations, always consider:
+- What assumptions are we making that might be wrong?
+- What's the worst realistic scenario if this fails?
+- What hidden dependencies or risks exist?
+- Are we suffering from groupthink or confirmation bias?
+- What would our competitors or critics say about this decision?
+- What regulatory, legal, or reputational risks are being underestimated?
+- What historical examples of similar decisions ended badly?
+- Is the timeline realistic? The budget adequate? The team capable?
+
+Your communication style:
+- Respectful but direct
+- Evidence-based challenges, not just contrarianism
+- Propose alternatives when criticizing
+- Acknowledge when concerns have been adequately addressed
+- Focus on the most significant risks, not minor issues""",
+    },
 }
 
 # Council Speaker persona for final synthesis
@@ -259,3 +299,157 @@ Structure your response as:
 4. Integrated Analysis
 5. Final Recommendation/Decision
 6. Next Steps and Responsibilities"""
+
+
+# Example situation templates for quick start
+EXAMPLE_TEMPLATES = [
+    {
+        "id": "market_expansion",
+        "name": "Market Expansion",
+        "category": "Strategy",
+        "description": "Evaluate expansion into new markets or regions",
+        "prompt": """We are considering expanding our production capacity by building a new factory in Eastern Europe (Poland or Czech Republic).
+
+Key factors:
+- Current capacity utilization: 85%
+- Projected demand growth: 12% annually
+- Estimated investment: €45 million
+- Timeline: 24 months to full operation
+- Labor cost savings potential: 30%
+
+What factors should we consider in making this decision?"""
+    },
+    {
+        "id": "technology_investment",
+        "name": "Technology Investment",
+        "category": "Technology",
+        "description": "Evaluate major technology or automation investments",
+        "prompt": """A startup is offering us an exclusive AI-powered quality control system that promises to reduce defects by 60% and inspection time by 80%.
+
+Key terms:
+- Investment required: €2M upfront + €200K/year maintenance
+- 3-year exclusive contract
+- Integration with existing MES system required
+- 6-month implementation timeline
+- ROI claim: breakeven in 18 months
+
+Should we proceed with this investment?"""
+    },
+    {
+        "id": "supply_chain_crisis",
+        "name": "Supply Chain Crisis",
+        "category": "Operations",
+        "description": "Respond to supply chain disruptions",
+        "prompt": """Our main supplier for critical electronic components just announced:
+- 40% price increase effective next quarter
+- Lead time extension from 4 weeks to 12 weeks
+- Allocation limits: 70% of our current volume
+
+This supplier represents 65% of our component needs. Alternative suppliers exist but are not qualified.
+
+How should we respond to this crisis?"""
+    },
+    {
+        "id": "workforce_challenge",
+        "name": "Workforce Restructuring",
+        "category": "HR",
+        "description": "Navigate workforce changes and cost reduction",
+        "prompt": """We need to reduce operating costs by 15% this year to maintain profitability.
+
+Current situation:
+- Workforce: 2,400 employees
+- Personnel costs: 45% of total costs
+- Works council (Betriebsrat) strongly opposed to layoffs
+- Union contract expires in 8 months
+- Average employee tenure: 12 years
+
+What options do we have to achieve cost targets while maintaining workforce stability?"""
+    },
+    {
+        "id": "strategic_partnership",
+        "name": "Strategic Partnership",
+        "category": "Strategy",
+        "description": "Evaluate joint ventures and partnerships",
+        "prompt": """A competitor is proposing a joint venture for a new sustainable product line:
+
+Proposal:
+- 50/50 ownership split
+- They handle sales and marketing (their strength)
+- We handle R&D and production (our strength)
+- Shared brand under new name
+- Initial investment: €15M each
+- Projected revenue: €100M by year 5
+
+Is this a good opportunity or a competitive threat?"""
+    },
+    {
+        "id": "digital_transformation",
+        "name": "Digital Transformation",
+        "category": "Technology",
+        "description": "Plan major digitalization initiatives",
+        "prompt": """Our board has mandated a comprehensive Industry 4.0 transformation:
+
+Current state:
+- Legacy ERP system (15 years old)
+- Limited production data visibility
+- Manual quality documentation
+- No predictive maintenance
+
+Options being considered:
+A) Big-bang replacement (€8M, 18 months)
+B) Phased modernization (€12M, 36 months)
+C) Hybrid approach with new digital layer (€6M, 24 months)
+
+Which approach should we take and why?"""
+    },
+    {
+        "id": "acquisition_target",
+        "name": "Acquisition Analysis",
+        "category": "M&A",
+        "description": "Evaluate acquisition opportunities",
+        "prompt": """A smaller competitor has approached us about acquisition:
+
+Target company profile:
+- Revenue: €80M (vs our €350M)
+- EBITDA margin: 8% (vs our 12%)
+- 450 employees
+- Complementary product portfolio
+- Strong presence in markets where we're weak
+- Asking price: €95M (1.2x revenue)
+
+Should we pursue this acquisition?"""
+    },
+    {
+        "id": "sustainability_initiative",
+        "name": "Sustainability Initiative",
+        "category": "ESG",
+        "description": "Plan environmental and sustainability programs",
+        "prompt": """We need to develop a carbon neutrality roadmap to meet:
+- Customer requirements (major OEMs requiring carbon-neutral suppliers by 2030)
+- EU regulations (CSRD reporting, carbon border adjustment)
+- Investor ESG expectations
+
+Current carbon footprint: 45,000 tons CO2/year
+- Scope 1 (direct): 15,000 tons
+- Scope 2 (energy): 20,000 tons
+- Scope 3 (supply chain): 10,000 tons
+
+What should our strategy and timeline be?"""
+    }
+]
+
+
+# Risk severity levels for risk matrix
+RISK_SEVERITY_LEVELS = {
+    "critical": {"score": 4, "color": "#dc2626", "label": "Critical"},
+    "high": {"score": 3, "color": "#ea580c", "label": "High"},
+    "medium": {"score": 2, "color": "#ca8a04", "label": "Medium"},
+    "low": {"score": 1, "color": "#16a34a", "label": "Low"},
+}
+
+RISK_LIKELIHOOD_LEVELS = {
+    "very_likely": {"score": 4, "label": "Very Likely (>75%)"},
+    "likely": {"score": 3, "label": "Likely (50-75%)"},
+    "possible": {"score": 2, "label": "Possible (25-50%)"},
+    "unlikely": {"score": 1, "label": "Unlikely (<25%)"},
+}
