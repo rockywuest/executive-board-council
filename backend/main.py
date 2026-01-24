@@ -270,7 +270,7 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
             yield f"data: {json.dumps({'type': 'stage1_complete', 'data': stage1_results})}\n\n"
 
             # Stage 2: Cross-evaluations
-            yield f"data: {json.dumps({'type': 'stage2_start', 'message': 'Executives evaluating each other\\'s perspectives...'})}\n\n"
+            yield f"data: {json.dumps({'type': 'stage2_start', 'message': 'Executives evaluating each others perspectives...'})}\n\n"
             stage2_results, label_to_role = await stage2_cross_evaluation(request.content, stage1_results)
             aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_role)
             yield f"data: {json.dumps({'type': 'stage2_complete', 'data': stage2_results, 'metadata': {'label_to_role': label_to_role, 'aggregate_rankings': aggregate_rankings}})}\n\n"
