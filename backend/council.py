@@ -14,11 +14,16 @@ from .config import (
     RISK_SEVERITY_LEVELS,
     RISK_LIKELIHOOD_LEVELS
 )
+from .industries import (
+    get_industry_executives,
+    get_council_speaker_persona,
+    COUNCIL_SPEAKER_MODEL as INDUSTRY_COUNCIL_MODEL
+)
 
 logger = logging.getLogger(__name__)
 
 
-async def stage1_collect_perspectives(user_query: str) -> List[Dict[str, Any]]:
+async def stage1_collect_perspectives(user_query: str, industry: str = "manufacturing") -> List[Dict[str, Any]]:
     """
     Stage 1: Collect individual perspectives from all executive board members.
 
@@ -27,17 +32,21 @@ async def stage1_collect_perspectives(user_query: str) -> List[Dict[str, Any]]:
 
     Args:
         user_query: The business situation/question to analyze
+        industry: Industry context for specialized executives
 
     Returns:
         List of dicts with 'role', 'title', 'model', 'response', 'confidence', and 'uncertainties'
     """
+    # Get industry-specific executives (fallback to default if not found)
+    industry_executives = get_industry_executives(industry) or EXECUTIVE_ROLES
+
     # Prepare executive configs for parallel querying
     executives = {
         role_key: {
             'model': role_config['model'],
             'persona': role_config['persona']
         }
-        for role_key, role_config in EXECUTIVE_ROLES.items()
+        for role_key, role_config in industry_executives.items()
     }
 
     # Build the prompt for executives with confidence scoring
@@ -70,14 +79,14 @@ This helps the board understand where more information might be needed."""
     # Format results with parsed confidence
     stage1_results = []
     for role_key, response in responses.items():
-        if response is not None:
+        if response is not None and role_key in industry_executives:
             content = response.get('content', '')
             confidence, uncertainties = parse_confidence_assessment(content)
 
             stage1_results.append({
                 "role": role_key,
-                "title": EXECUTIVE_ROLES[role_key]["title"],
-                "model": EXECUTIVE_ROLES[role_key]["model"],
+                "title": industry_executives[role_key]["title"],
+                "model": industry_executives[role_key]["model"],
                 "response": content,
                 "confidence": confidence,
                 "uncertainties": uncertainties
@@ -121,7 +130,8 @@ def parse_confidence_assessment(text: str) -> Tuple[str, List[str]]:
 
 async def stage2_cross_evaluation(
     user_query: str,
-    stage1_results: List[Dict[str, Any]]
+    stage1_results: List[Dict[str, Any]],
+    industry: str = "manufacturing"
 ) -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
     """
     Stage 2: Each executive evaluates other executives' perspectives.
@@ -132,10 +142,14 @@ async def stage2_cross_evaluation(
     Args:
         user_query: The original business situation
         stage1_results: Results from Stage 1
+        industry: Industry context for specialized executives
 
     Returns:
         Tuple of (evaluations list, label_to_role mapping)
     """
+    # Get industry-specific executives
+    industry_executives = get_industry_executives(industry) or EXECUTIVE_ROLES
+
     # Create anonymized labels for responses
     labels = [chr(65 + i) for i in range(len(stage1_results))]  # A, B, C, ...
 
@@ -157,7 +171,7 @@ async def stage2_cross_evaluation(
             'model': role_config['model'],
             'persona': role_config['persona']
         }
-        for role_key, role_config in EXECUTIVE_ROLES.items()
+        for role_key, role_config in industry_executives.items()
     }
 
     evaluation_prompt = f"""The Executive Board is discussing the following business situation:
@@ -199,13 +213,13 @@ Rank all perspectives from most valuable (1) to least valuable for this specific
     # Format results
     stage2_results = []
     for role_key, response in responses.items():
-        if response is not None:
+        if response is not None and role_key in industry_executives:
             full_text = response.get('content', '')
             parsed = parse_structured_ranking(full_text)
             stage2_results.append({
                 "role": role_key,
-                "title": EXECUTIVE_ROLES[role_key]["title"],
-                "model": EXECUTIVE_ROLES[role_key]["model"],
+                "title": industry_executives[role_key]["title"],
+                "model": industry_executives[role_key]["model"],
                 "evaluation": full_text,
                 "parsed_ranking": parsed.get('ranking', []),
                 "key_agreements": parsed.get('key_agreements', []),
@@ -276,7 +290,8 @@ async def stage2_5_debate(
     user_query: str,
     stage1_results: List[Dict[str, Any]],
     stage2_results: List[Dict[str, Any]],
-    label_to_role: Dict[str, str]
+    label_to_role: Dict[str, str],
+    industry: str = "manufacturing"
 ) -> List[Dict[str, Any]]:
     """
     Stage 2.5: Executives respond to critiques and refine their positions.
@@ -289,10 +304,14 @@ async def stage2_5_debate(
         stage1_results: Original perspectives from Stage 1
         stage2_results: Cross-evaluations from Stage 2
         label_to_role: Mapping from perspective labels to roles
+        industry: Industry context for specialized executives
 
     Returns:
         List of debate responses
     """
+    # Get industry-specific executives
+    industry_executives = get_industry_executives(industry) or EXECUTIVE_ROLES
+
     # Create reverse mapping: role to label
     role_to_label = {v: k for k, v in label_to_role.items()}
 
@@ -301,6 +320,10 @@ async def stage2_5_debate(
     for stage1_item in stage1_results:
         role_key = stage1_item['role']
         role_label = role_to_label.get(role_key, '')
+
+        # Skip if this executive isn't in the industry's roster
+        if role_key not in industry_executives:
+            continue
 
         # Collect critiques of this executive's perspective from other executives
         critiques = []
@@ -344,11 +367,11 @@ Please provide a brief response (200-400 words):
 
 Be constructive and focused on improving the final decision."""
 
-        # Query this executive
+        # Query this executive using industry-specific config
         executives = {
             role_key: {
-                'model': EXECUTIVE_ROLES[role_key]['model'],
-                'persona': EXECUTIVE_ROLES[role_key]['persona']
+                'model': industry_executives[role_key]['model'],
+                'persona': industry_executives[role_key]['persona']
             }
         }
 
@@ -357,7 +380,7 @@ Be constructive and focused on improving the final decision."""
         if role_key in responses and responses[role_key]:
             debate_results.append({
                 "role": role_key,
-                "title": EXECUTIVE_ROLES[role_key]["title"],
+                "title": industry_executives[role_key]["title"],
                 "response": responses[role_key].get('content', ''),
                 "critiques_addressed": len(critiques)
             })
@@ -368,7 +391,8 @@ Be constructive and focused on improving the final decision."""
 async def generate_risk_matrix(
     user_query: str,
     stage1_results: List[Dict[str, Any]],
-    stage2_results: List[Dict[str, Any]]
+    stage2_results: List[Dict[str, Any]],
+    industry: str = "manufacturing"
 ) -> Dict[str, Any]:
     """
     Generate a structured risk matrix from all executive perspectives.
@@ -377,10 +401,14 @@ async def generate_risk_matrix(
         user_query: The business situation
         stage1_results: All executive perspectives
         stage2_results: Cross-evaluations
+        industry: Industry context for role names in risk ownership
 
     Returns:
         Dict containing structured risk matrix
     """
+    # Get industry-specific executives for role names
+    industry_executives = get_industry_executives(industry) or EXECUTIVE_ROLES
+    role_names = "|".join(industry_executives.keys())
     # Compile all perspectives
     all_perspectives = "\n\n".join([
         f"**{r['title']}:**\n{r['response'][:1500]}"
@@ -408,7 +436,7 @@ Respond ONLY with valid JSON in this exact format:
       "category": "Financial|Operational|Strategic|Legal|Reputational|Technical",
       "likelihood": "unlikely|possible|likely|very_likely",
       "impact": "low|medium|high|critical",
-      "owner": "CEO|CFO|CTO|CHRO|CSO|CPO_CSCO",
+      "owner": "{role_names}",
       "mitigation": "Suggested mitigation strategy",
       "source_executive": "Who identified this risk"
     }}
@@ -461,7 +489,8 @@ async def stage3_council_speaker_synthesis(
     stage1_results: List[Dict[str, Any]],
     stage2_results: List[Dict[str, Any]],
     debate_results: Optional[List[Dict[str, Any]]] = None,
-    risk_matrix: Optional[Dict[str, Any]] = None
+    risk_matrix: Optional[Dict[str, Any]] = None,
+    industry: str = "manufacturing"
 ) -> Dict[str, Any]:
     """
     Stage 3: Council Speaker synthesizes all perspectives into a final decision.
@@ -475,10 +504,14 @@ async def stage3_council_speaker_synthesis(
         stage2_results: Cross-evaluations from Stage 2
         debate_results: Optional debate responses from Stage 2.5
         risk_matrix: Optional structured risk analysis
+        industry: Industry context for specialized Council Speaker
 
     Returns:
         Dict with 'model' and 'response' keys
     """
+    # Get industry-specific Council Speaker persona (fallback to default)
+    speaker_persona = get_council_speaker_persona(industry) or COUNCIL_SPEAKER_PERSONA
+
     # Build comprehensive context for the Council Speaker
     stage1_text = "\n\n".join([
         f"**{result['title']} ({result['role']})** [Confidence: {result.get('confidence', 'N/A')}]:\n{result['response']}"
@@ -507,7 +540,7 @@ async def stage3_council_speaker_synthesis(
             for risk in high_risks[:5]:
                 risk_text += f"\n- [{risk.get('risk_level', 'high').upper()}] {risk.get('description', 'Unknown')} (Owner: {risk.get('owner', 'TBD')})"
 
-    speaker_prompt = f"""{COUNCIL_SPEAKER_PERSONA}
+    speaker_prompt = f"""{speaker_persona}
 
 ---
 
@@ -561,7 +594,8 @@ Follow the structure outlined in your role description."""
 
 def calculate_aggregate_rankings(
     stage2_results: List[Dict[str, Any]],
-    label_to_role: Dict[str, str]
+    label_to_role: Dict[str, str],
+    industry: str = "manufacturing"
 ) -> List[Dict[str, Any]]:
     """
     Calculate aggregate rankings across all executives.
@@ -569,10 +603,14 @@ def calculate_aggregate_rankings(
     Args:
         stage2_results: Evaluations from each executive
         label_to_role: Mapping from anonymous labels to role names
+        industry: Industry context for executive titles
 
     Returns:
         List of dicts with role name and average rank, sorted best to worst
     """
+    # Get industry-specific executives for titles
+    industry_executives = get_industry_executives(industry) or EXECUTIVE_ROLES
+
     # Track positions for each role
     role_positions = defaultdict(list)
 
@@ -591,7 +629,7 @@ def calculate_aggregate_rankings(
             avg_rank = sum(positions) / len(positions)
             aggregate.append({
                 "role": role,
-                "title": EXECUTIVE_ROLES.get(role, {}).get("title", role),
+                "title": industry_executives.get(role, {}).get("title", role),
                 "average_rank": round(avg_rank, 2),
                 "rankings_count": len(positions)
             })
@@ -640,7 +678,8 @@ Title:"""
 async def run_executive_board_meeting(
     user_query: str,
     include_debate: bool = True,
-    include_risk_matrix: bool = True
+    include_risk_matrix: bool = True,
+    industry: str = "manufacturing"
 ) -> Tuple[List, List, Dict, Dict, Optional[List], Optional[Dict]]:
     """
     Run the complete executive board meeting process with all stages.
@@ -649,13 +688,17 @@ async def run_executive_board_meeting(
         user_query: The business situation/question to discuss
         include_debate: Whether to run the debate stage (Stage 2.5)
         include_risk_matrix: Whether to generate risk matrix
+        industry: Industry context for specialized executives
 
     Returns:
         Tuple of (stage1_results, stage2_results, stage3_result, metadata,
                   debate_results, risk_matrix)
     """
+    # Get industry-specific executives for metadata
+    industry_executives = get_industry_executives(industry) or EXECUTIVE_ROLES
+
     # Stage 1: Collect individual executive perspectives
-    stage1_results = await stage1_collect_perspectives(user_query)
+    stage1_results = await stage1_collect_perspectives(user_query, industry)
 
     # If no executives responded successfully, return error
     if not stage1_results:
@@ -665,22 +708,28 @@ async def run_executive_board_meeting(
         }, {}, None, None
 
     # Stage 2: Cross-evaluations
-    stage2_results, label_to_role = await stage2_cross_evaluation(user_query, stage1_results)
+    stage2_results, label_to_role = await stage2_cross_evaluation(
+        user_query, stage1_results, industry
+    )
 
     # Calculate aggregate rankings
-    aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_role)
+    aggregate_rankings = calculate_aggregate_rankings(
+        stage2_results, label_to_role, industry
+    )
 
     # Stage 2.5: Debate (optional)
     debate_results = None
     if include_debate and stage2_results:
         debate_results = await stage2_5_debate(
-            user_query, stage1_results, stage2_results, label_to_role
+            user_query, stage1_results, stage2_results, label_to_role, industry
         )
 
     # Risk Matrix (optional)
     risk_matrix = None
     if include_risk_matrix:
-        risk_matrix = await generate_risk_matrix(user_query, stage1_results, stage2_results)
+        risk_matrix = await generate_risk_matrix(
+            user_query, stage1_results, stage2_results, industry
+        )
 
     # Stage 3: Council Speaker synthesizes final recommendation
     stage3_result = await stage3_council_speaker_synthesis(
@@ -688,13 +737,15 @@ async def run_executive_board_meeting(
         stage1_results,
         stage2_results,
         debate_results,
-        risk_matrix
+        risk_matrix,
+        industry
     )
 
-    # Prepare metadata
+    # Prepare metadata with industry-specific executives
     metadata = {
         "label_to_role": label_to_role,
         "aggregate_rankings": aggregate_rankings,
+        "industry": industry,
         "confidence_summary": {
             role['role']: {
                 'confidence': role.get('confidence', 'MEDIUM'),
@@ -707,7 +758,7 @@ async def run_executive_board_meeting(
                 "title": role_config["title"],
                 "model": role_config["model"]
             }
-            for role_key, role_config in EXECUTIVE_ROLES.items()
+            for role_key, role_config in industry_executives.items()
         }
     }
 
@@ -717,7 +768,8 @@ async def run_executive_board_meeting(
 async def compare_scenarios(
     scenarios: List[str],
     include_debate: bool = False,
-    include_risk_matrix: bool = True
+    include_risk_matrix: bool = True,
+    industry: str = "manufacturing"
 ) -> Dict[str, Any]:
     """
     Run the council process on multiple scenarios and generate a comparison.
@@ -726,6 +778,7 @@ async def compare_scenarios(
         scenarios: List of scenario descriptions to compare
         include_debate: Whether to include debate stage
         include_risk_matrix: Whether to include risk analysis
+        industry: Industry context for specialized executives
 
     Returns:
         Dict with scenario results and comparison synthesis
@@ -736,7 +789,8 @@ async def compare_scenarios(
         result = await run_executive_board_meeting(
             scenario,
             include_debate=include_debate,
-            include_risk_matrix=include_risk_matrix
+            include_risk_matrix=include_risk_matrix,
+            industry=industry
         )
         scenario_results.append({
             "scenario_id": i + 1,

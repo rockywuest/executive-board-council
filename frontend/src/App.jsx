@@ -21,13 +21,25 @@ import {
   Shield,
   Lightbulb,
   RefreshCw,
-  Trash2
+  Trash2,
+  ArrowLeft,
+  Factory,
+  Car,
+  Monitor,
+  Heart,
+  Landmark,
+  ShoppingCart,
+  Zap,
+  FlaskConical,
+  Truck,
+  HardHat
 } from 'lucide-react'
 import './App.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
 
-const EXECUTIVE_INFO = {
+// Default executive info (manufacturing) - will be replaced by dynamic data
+const DEFAULT_EXECUTIVE_INFO = {
   CEO: { title: 'Chief Executive Officer', german: 'Vorstandsvorsitzender', color: '#2563eb', icon: '👔' },
   CFO: { title: 'Chief Financial Officer', german: 'Finanzvorstand', color: '#059669', icon: '💰' },
   CTO: { title: 'Chief Technology Officer', german: 'Technischer Vorstand', color: '#7c3aed', icon: '⚙️' },
@@ -37,8 +49,58 @@ const EXECUTIVE_INFO = {
   DEVILS_ADVOCATE: { title: "Devil's Advocate", german: 'Advocatus Diaboli', color: '#dc2626', icon: '😈' },
 }
 
-function ExecutiveCard({ role, title, response, confidence, uncertainties, isExpanded, onToggle }) {
-  const info = EXECUTIVE_INFO[role] || { title: role, german: '', color: '#666', icon: '👤' }
+// Icon mapping for industries
+const INDUSTRY_ICONS = {
+  manufacturing: Factory,
+  automotive: Car,
+  technology: Monitor,
+  healthcare: Heart,
+  financial: Landmark,
+  retail: ShoppingCart,
+  energy: Zap,
+  chemicals: FlaskConical,
+  logistics: Truck,
+  construction: HardHat,
+}
+
+// Color assignments for executive roles
+const ROLE_COLORS = {
+  CEO: '#2563eb',
+  CFO: '#059669',
+  CTO: '#7c3aed',
+  CHRO: '#db2777',
+  CSO: '#ea580c',
+  CPO_CSCO: '#0891b2',
+  CPO: '#0891b2',
+  CISO: '#6366f1',
+  CMO: '#f59e0b',
+  CRO: '#8b5cf6',
+  CCO: '#ec4899',
+  COO: '#14b8a6',
+  CLO: '#64748b',
+  DEVILS_ADVOCATE: '#dc2626',
+}
+
+// Icon assignments for executive roles
+const ROLE_ICONS = {
+  CEO: '👔',
+  CFO: '💰',
+  CTO: '⚙️',
+  CHRO: '👥',
+  CSO: '📈',
+  CPO_CSCO: '🔗',
+  CPO: '📦',
+  CISO: '🔒',
+  CMO: '📣',
+  CRO: '⚖️',
+  CCO: '🤝',
+  COO: '🏭',
+  CLO: '📜',
+  DEVILS_ADVOCATE: '😈',
+}
+
+function ExecutiveCard({ role, title, response, confidence, uncertainties, isExpanded, onToggle, executiveInfo }) {
+  const info = executiveInfo[role] || { title: role, german: '', color: '#666', icon: '👤' }
   const cardId = `exec-card-${role}`
 
   const getConfidenceClass = (conf) => {
@@ -98,8 +160,8 @@ function ExecutiveCard({ role, title, response, confidence, uncertainties, isExp
   )
 }
 
-function EvaluationCard({ role, title, evaluation, isExpanded, onToggle }) {
-  const info = EXECUTIVE_INFO[role] || { title: role, german: '', color: '#666', icon: '👤' }
+function EvaluationCard({ role, title, evaluation, isExpanded, onToggle, executiveInfo }) {
+  const info = executiveInfo[role] || { title: role, german: '', color: '#666', icon: '👤' }
   const cardId = `eval-card-${role}`
 
   return (
@@ -135,8 +197,8 @@ function EvaluationCard({ role, title, evaluation, isExpanded, onToggle }) {
   )
 }
 
-function DebateCard({ role, title, response, isExpanded, onToggle }) {
-  const info = EXECUTIVE_INFO[role] || { title: role, german: '', color: '#666', icon: '👤' }
+function DebateCard({ role, title, response, isExpanded, onToggle, executiveInfo }) {
+  const info = executiveInfo[role] || { title: role, german: '', color: '#666', icon: '👤' }
   const cardId = `debate-card-${role}`
 
   return (
@@ -385,7 +447,60 @@ function TemplateSelector({ templates, onSelect }) {
   )
 }
 
+function IndustrySelector({ industries, onSelect, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="industry-selector">
+        <div className="industry-loading">
+          <Loader2 size={48} className="spinning" />
+          <p>Loading industries...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="industry-selector">
+      <div className="industry-header">
+        <Building2 size={48} />
+        <h1>Executive Board Council</h1>
+        <p>Select your industry to customize the executive board composition and scenarios</p>
+      </div>
+      <div className="industry-grid">
+        {industries.map(industry => {
+          const IconComponent = INDUSTRY_ICONS[industry.id] || Building2
+          return (
+            <button
+              key={industry.id}
+              onClick={() => onSelect(industry)}
+              className="industry-card"
+              type="button"
+            >
+              <div className="industry-icon">
+                <IconComponent size={32} />
+              </div>
+              <h3>{industry.name}</h3>
+              <p className="industry-german">{industry.german_context}</p>
+              <p className="industry-description">{industry.description}</p>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function App() {
+  // Industry state - persisted in localStorage
+  const [selectedIndustry, setSelectedIndustry] = useState(() => {
+    const saved = localStorage.getItem('selectedIndustry')
+    return saved ? JSON.parse(saved) : null
+  })
+  const [industries, setIndustries] = useState([])
+  const [industriesLoading, setIndustriesLoading] = useState(true)
+  const [executiveInfo, setExecutiveInfo] = useState(DEFAULT_EXECUTIVE_INFO)
+
+  // Main app state
   const [situation, setSituation] = useState('')
   const [files, setFiles] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -410,10 +525,20 @@ function App() {
     'Synthesis'
   ]
 
+  // Fetch industries on mount
   useEffect(() => {
-    fetchMeetings()
-    fetchTemplates()
+    fetchIndustries()
   }, [])
+
+  // When industry changes, save to localStorage and fetch industry-specific data
+  useEffect(() => {
+    if (selectedIndustry) {
+      localStorage.setItem('selectedIndustry', JSON.stringify(selectedIndustry))
+      fetchIndustryExecutives(selectedIndustry.id)
+      fetchTemplates(selectedIndustry.id)
+      fetchMeetings()
+    }
+  }, [selectedIndustry])
 
   useEffect(() => {
     if (results && resultRef.current) {
@@ -421,19 +546,77 @@ function App() {
     }
   }, [results])
 
+  const fetchIndustries = async () => {
+    setIndustriesLoading(true)
+    try {
+      const response = await fetch(`${API_URL}/api/industries`)
+      const data = await response.json()
+      setIndustries(data)
+    } catch (err) {
+      console.error('Failed to fetch industries:', err)
+    } finally {
+      setIndustriesLoading(false)
+    }
+  }
+
+  const fetchIndustryExecutives = async (industryId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/industries/${industryId}/executives`)
+      const data = await response.json()
+      // Transform backend data to frontend format with colors and icons
+      const transformed = {}
+      for (const [roleKey, roleData] of Object.entries(data)) {
+        transformed[roleKey] = {
+          title: roleData.title,
+          german: roleData.german || '',
+          color: ROLE_COLORS[roleKey] || '#666',
+          icon: ROLE_ICONS[roleKey] || '👤'
+        }
+      }
+      setExecutiveInfo(transformed)
+    } catch (err) {
+      console.error('Failed to fetch executives:', err)
+      setExecutiveInfo(DEFAULT_EXECUTIVE_INFO)
+    }
+  }
+
+  const handleIndustrySelect = (industry) => {
+    setSelectedIndustry(industry)
+    // Reset meeting state when changing industry
+    setCurrentMeeting(null)
+    setResults(null)
+    setSituation('')
+  }
+
+  const changeIndustry = () => {
+    setSelectedIndustry(null)
+    localStorage.removeItem('selectedIndustry')
+    setCurrentMeeting(null)
+    setResults(null)
+    setSituation('')
+  }
+
   const fetchMeetings = async () => {
     try {
       const response = await fetch(`${API_URL}/api/meetings`)
       const data = await response.json()
-      setMeetings(data)
+      // Filter meetings by current industry if selected
+      const filtered = selectedIndustry
+        ? data.filter(m => m.industry === selectedIndustry.id || !m.industry)
+        : data
+      setMeetings(filtered)
     } catch (err) {
       console.error('Failed to fetch meetings:', err)
     }
   }
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = async (industryId) => {
     try {
-      const response = await fetch(`${API_URL}/api/templates`)
+      // Use industry-specific templates if available
+      const url = industryId
+        ? `${API_URL}/api/industries/${industryId}/templates`
+        : `${API_URL}/api/templates`
+      const response = await fetch(url)
       const data = await response.json()
       setTemplates(data)
     } catch (err) {
@@ -446,7 +629,9 @@ function App() {
       const response = await fetch(`${API_URL}/api/meetings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
+        body: JSON.stringify({
+          industry: selectedIndustry?.id || 'manufacturing'
+        })
       })
       const data = await response.json()
       setCurrentMeeting(data)
@@ -686,17 +871,41 @@ function App() {
     }
   }
 
+  // Show industry selector if no industry is selected
+  if (!selectedIndustry) {
+    return (
+      <div className="app industry-select-mode">
+        <IndustrySelector
+          industries={industries}
+          onSelect={handleIndustrySelect}
+          isLoading={industriesLoading}
+        />
+      </div>
+    )
+  }
+
+  const IndustryIcon = INDUSTRY_ICONS[selectedIndustry.id] || Building2
+
   return (
     <div className="app">
       <header className="header">
         <div className="header-content">
-          <Building2 size={32} aria-hidden="true" />
+          <IndustryIcon size={32} aria-hidden="true" />
           <div>
             <h1>Executive Board Council</h1>
-            <p>German Production Company Decision Support</p>
+            <p>{selectedIndustry.name}</p>
           </div>
         </div>
         <div className="header-actions">
+          <button
+            onClick={changeIndustry}
+            className="header-btn change-industry-btn"
+            type="button"
+            aria-label="Change industry"
+          >
+            <ArrowLeft size={20} />
+            <span className="btn-label">Change Industry</span>
+          </button>
           <button
             onClick={() => setShowHistory(!showHistory)}
             className={`header-btn ${showHistory ? 'active' : ''}`}
@@ -867,6 +1076,7 @@ Example: We are considering expanding our production capacity by building a new 
                       uncertainties={perspective.uncertainties}
                       isExpanded={expandedCards[`s1-${perspective.role}`]}
                       onToggle={() => toggleCard(`s1-${perspective.role}`)}
+                      executiveInfo={executiveInfo}
                     />
                   ))}
                 </div>
@@ -903,6 +1113,7 @@ Example: We are considering expanding our production capacity by building a new 
                       evaluation={evaluation.evaluation}
                       isExpanded={expandedCards[`s2-${evaluation.role}`]}
                       onToggle={() => toggleCard(`s2-${evaluation.role}`)}
+                      executiveInfo={executiveInfo}
                     />
                   ))}
                 </div>
@@ -924,6 +1135,7 @@ Example: We are considering expanding our production capacity by building a new 
                         response={debate.response}
                         isExpanded={expandedCards[`debate-${debate.role}`]}
                         onToggle={() => toggleCard(`debate-${debate.role}`)}
+                        executiveInfo={executiveInfo}
                       />
                     ))}
                   </div>
@@ -953,9 +1165,9 @@ Example: We are considering expanding our production capacity by building a new 
       </div>
 
       <footer className="footer">
-        <p>Executive Board Council v2.0 - Powered by Multiple LLMs via OpenRouter</p>
+        <p>Executive Board Council v3.0 - Powered by Multiple LLMs via OpenRouter</p>
         <p className="footer-features">
-          Features: Devil's Advocate • Debate Stage • Risk Matrix • Confidence Scores • Scenario Comparison
+          Features: Industry Selection • Devil's Advocate • Debate Stage • Risk Matrix • Confidence Scores
         </p>
       </footer>
     </div>

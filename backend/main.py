@@ -13,6 +13,13 @@ import asyncio
 
 from . import storage
 from .config import EXAMPLE_TEMPLATES, EXECUTIVE_ROLES
+from .industries import (
+    get_industry,
+    get_industry_list,
+    get_industry_executives,
+    get_industry_templates,
+    INDUSTRIES
+)
 from .council import (
     run_executive_board_meeting,
     generate_meeting_title,
@@ -48,6 +55,7 @@ app.add_middleware(
 class CreateMeetingRequest(BaseModel):
     """Request to create a new executive board meeting."""
     title: Optional[str] = Field(default=None, max_length=200)
+    industry: Optional[str] = Field(default="manufacturing", description="Industry for the meeting")
 
 
 class SubmitSituationRequest(BaseModel):
@@ -87,6 +95,7 @@ class MeetingMetadata(BaseModel):
     id: str
     created_at: str
     title: str
+    industry: Optional[str] = "manufacturing"
     discussion_count: int
 
 
@@ -95,6 +104,7 @@ class Meeting(BaseModel):
     id: str
     created_at: str
     title: str
+    industry: Optional[str] = "manufacturing"
     discussions: List[Dict[str, Any]]
 
 
@@ -120,8 +130,57 @@ async def root():
 
 @app.get("/api/templates", response_model=List[ExampleTemplate])
 async def get_templates():
-    """Get example situation templates."""
+    """Get example situation templates (legacy - use industry-specific templates instead)."""
     return EXAMPLE_TEMPLATES
+
+
+# =========================================================================
+# INDUSTRY ENDPOINTS
+# =========================================================================
+
+@app.get("/api/industries")
+async def list_industries():
+    """Get list of all available industries."""
+    return get_industry_list()
+
+
+@app.get("/api/industries/{industry_id}")
+async def get_industry_details(industry_id: str):
+    """Get full details for a specific industry."""
+    industry = get_industry(industry_id)
+    if not industry:
+        raise HTTPException(status_code=404, detail=f"Industry not found: {industry_id}")
+    return {
+        "id": industry["id"],
+        "name": industry["name"],
+        "icon": industry["icon"],
+        "description": industry["description"],
+        "german_context": industry["german_context"]
+    }
+
+
+@app.get("/api/industries/{industry_id}/executives")
+async def get_industry_executive_roles(industry_id: str):
+    """Get executive roles configured for a specific industry."""
+    executives = get_industry_executives(industry_id)
+    if not executives:
+        raise HTTPException(status_code=404, detail=f"Industry not found: {industry_id}")
+    return {
+        role_key: {
+            "title": role_config["title"],
+            "model": role_config["model"]
+        }
+        for role_key, role_config in executives.items()
+    }
+
+
+@app.get("/api/industries/{industry_id}/templates")
+async def get_industry_template_list(industry_id: str):
+    """Get example templates for a specific industry."""
+    templates = get_industry_templates(industry_id)
+    if templates is None:
+        raise HTTPException(status_code=404, detail=f"Industry not found: {industry_id}")
+    return templates
 
 
 @app.get("/api/executives")
@@ -145,8 +204,12 @@ async def list_meetings():
 @app.post("/api/meetings", response_model=Meeting)
 async def create_meeting(request: CreateMeetingRequest):
     """Create a new executive board meeting."""
+    # Validate industry if provided
+    if request.industry and request.industry not in INDUSTRIES:
+        raise HTTPException(status_code=400, detail=f"Unknown industry: {request.industry}")
+
     meeting_id = str(uuid.uuid4())
-    meeting = storage.create_meeting(meeting_id)
+    meeting = storage.create_meeting(meeting_id, industry=request.industry)
     return meeting
 
 
@@ -207,12 +270,16 @@ async def submit_situation(meeting_id: str, request: SubmitSituationRequest):
         title = await generate_meeting_title(request.content)
         storage.update_meeting_title(meeting_id, title)
 
+    # Get industry from meeting
+    industry = meeting.get("industry", "manufacturing")
+
     # Run the complete executive board process
     stage1_results, stage2_results, stage3_result, metadata, debate_results, risk_matrix = \
         await run_executive_board_meeting(
             request.content,
             include_debate=request.include_debate,
-            include_risk_matrix=request.include_risk_matrix
+            include_risk_matrix=request.include_risk_matrix,
+            industry=industry
         )
 
     # Add board response with all stages
@@ -254,6 +321,9 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
     # Check if this is the first discussion
     is_first_discussion = len(meeting["discussions"]) == 0
 
+    # Get industry from meeting
+    industry = meeting.get("industry", "manufacturing")
+
     async def event_generator():
         try:
             # Add the business situation
@@ -266,12 +336,12 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
 
             # Stage 1: Collect executive perspectives (with confidence scores)
             yield f"data: {json.dumps({'type': 'stage1_start', 'message': 'Collecting executive perspectives...'})}\n\n"
-            stage1_results = await stage1_collect_perspectives(request.content)
+            stage1_results = await stage1_collect_perspectives(request.content, industry=industry)
             yield f"data: {json.dumps({'type': 'stage1_complete', 'data': stage1_results})}\n\n"
 
             # Stage 2: Cross-evaluations
             yield f"data: {json.dumps({'type': 'stage2_start', 'message': 'Executives evaluating each others perspectives...'})}\n\n"
-            stage2_results, label_to_role = await stage2_cross_evaluation(request.content, stage1_results)
+            stage2_results, label_to_role = await stage2_cross_evaluation(request.content, stage1_results, industry=industry)
             aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_role)
             yield f"data: {json.dumps({'type': 'stage2_complete', 'data': stage2_results, 'metadata': {'label_to_role': label_to_role, 'aggregate_rankings': aggregate_rankings}})}\n\n"
 
@@ -279,7 +349,7 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
             debate_results = None
             if request.include_debate:
                 yield f"data: {json.dumps({'type': 'stage2_5_start', 'message': 'Executives debating and refining positions...'})}\n\n"
-                debate_results = await stage2_5_debate(request.content, stage1_results, stage2_results, label_to_role)
+                debate_results = await stage2_5_debate(request.content, stage1_results, stage2_results, label_to_role, industry=industry)
                 yield f"data: {json.dumps({'type': 'stage2_5_complete', 'data': debate_results})}\n\n"
 
             # Risk Matrix (optional, run in parallel with other tasks)
@@ -287,7 +357,7 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
             risk_task = None
             if request.include_risk_matrix:
                 yield f"data: {json.dumps({'type': 'risk_matrix_start', 'message': 'Generating risk matrix...'})}\n\n"
-                risk_task = asyncio.create_task(generate_risk_matrix(request.content, stage1_results, stage2_results))
+                risk_task = asyncio.create_task(generate_risk_matrix(request.content, stage1_results, stage2_results, industry=industry))
 
             # Stage 3: Council Speaker synthesis
             yield f"data: {json.dumps({'type': 'stage3_start', 'message': 'Council Speaker synthesizing final recommendation...'})}\n\n"
@@ -300,7 +370,7 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
             # Generate synthesis with all available data
             stage3_result = await stage3_council_speaker_synthesis(
                 request.content, stage1_results, stage2_results,
-                debate_results=debate_results, risk_matrix=risk_matrix
+                debate_results=debate_results, risk_matrix=risk_matrix, industry=industry
             )
             yield f"data: {json.dumps({'type': 'stage3_complete', 'data': stage3_result})}\n\n"
 

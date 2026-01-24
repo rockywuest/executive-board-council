@@ -43,12 +43,13 @@ def _atomic_write(path: str, data: Dict[str, Any]):
         raise
 
 
-def create_meeting(meeting_id: str) -> Dict[str, Any]:
+def create_meeting(meeting_id: str, industry: str = "manufacturing") -> Dict[str, Any]:
     """
     Create a new executive board meeting.
 
     Args:
         meeting_id: Unique identifier for the meeting
+        industry: Industry context for the meeting (default: manufacturing)
 
     Returns:
         New meeting dict
@@ -57,6 +58,7 @@ def create_meeting(meeting_id: str) -> Dict[str, Any]:
         "id": meeting_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "title": "Executive Board Meeting",
+        "industry": industry,
         "discussions": []
     }
 
@@ -128,6 +130,7 @@ def list_meetings() -> List[Dict[str, Any]]:
                         "id": data["id"],
                         "created_at": data["created_at"],
                         "title": data.get("title", "Executive Board Meeting"),
+                        "industry": data.get("industry", "manufacturing"),
                         "discussion_count": len(data.get("discussions", []))
                     })
             except json.JSONDecodeError as e:
