@@ -2,9 +2,9 @@
 
 import logging
 import re
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Dict, Any, Optional
 import uuid
@@ -13,6 +13,27 @@ import asyncio
 
 from . import storage
 from .config import EXAMPLE_TEMPLATES, EXECUTIVE_ROLES
+from .auth import (
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    AuthResponse,
+    UserTier,
+    register_user,
+    login_user,
+    logout_user,
+    get_optional_user,
+    require_auth,
+    get_client_ip,
+)
+from .usage import get_usage_tracker
+from .stripe_billing import (
+    create_checkout_session,
+    create_portal_session,
+    handle_webhook,
+    get_subscription_status,
+    is_stripe_configured,
+)
 from .industries import (
     get_industry,
     get_industry_list,
@@ -126,6 +147,196 @@ async def root():
         "version": "2.0.0",
         "features": ["debate_stage", "risk_matrix", "confidence_scores", "scenario_comparison", "devils_advocate"]
     }
+
+
+# =========================================================================
+# AUTHENTICATION ENDPOINTS
+# =========================================================================
+
+@app.post("/api/auth/register", response_model=AuthResponse)
+async def auth_register(request: UserCreate):
+    """
+    Register a new user account.
+
+    Returns access token and user info. New users start on the 'free' tier
+    with 5 requests per month.
+    """
+    return await register_user(request.email, request.password)
+
+
+@app.post("/api/auth/login", response_model=AuthResponse)
+async def auth_login(request: UserLogin):
+    """
+    Login with email and password.
+
+    Returns access token and user info including current tier.
+    """
+    return await login_user(request.email, request.password)
+
+
+@app.post("/api/auth/logout")
+async def auth_logout(user: UserResponse = Depends(require_auth)):
+    """Logout current user (invalidates token)."""
+    # Note: Supabase JWTs are stateless, so we just acknowledge the logout
+    return {"status": "logged_out"}
+
+
+@app.get("/api/auth/me", response_model=UserResponse)
+async def auth_me(user: UserResponse = Depends(require_auth)):
+    """Get current authenticated user info."""
+    return user
+
+
+# =========================================================================
+# USAGE ENDPOINTS
+# =========================================================================
+
+@app.get("/api/usage")
+async def get_usage(
+    request: Request,
+    user: Optional[UserResponse] = Depends(get_optional_user)
+):
+    """
+    Get current usage limits and remaining requests.
+
+    Returns usage info based on authentication state:
+    - Anonymous: IP-based tracking, 2 requests/day
+    - Free tier: 5 requests/month
+    - Pro tier: 50 requests/month
+    - Enterprise: Unlimited
+    """
+    tracker = get_usage_tracker()
+
+    if user:
+        usage = tracker.get_user_usage(user.id, user.tier)
+        return {
+            "authenticated": True,
+            "tier": user.tier,
+            "email": user.email,
+            **usage
+        }
+    else:
+        ip = get_client_ip(request)
+        usage = tracker.get_ip_usage(ip)
+        return {
+            "authenticated": False,
+            "tier": UserTier.ANONYMOUS,
+            **usage
+        }
+
+
+@app.get("/api/tiers")
+async def get_tiers():
+    """Get information about available subscription tiers."""
+    return {
+        "tiers": [
+            {
+                "id": UserTier.ANONYMOUS,
+                "name": "Anonymous",
+                "price": 0,
+                "requests_per_day": UserTier.LIMITS[UserTier.ANONYMOUS]["daily"],
+                "requests_per_month": UserTier.LIMITS[UserTier.ANONYMOUS]["monthly"],
+                "features": ["Basic access", "2 requests per day"]
+            },
+            {
+                "id": UserTier.FREE,
+                "name": "Free",
+                "price": 0,
+                "requests_per_day": -1,
+                "requests_per_month": UserTier.LIMITS[UserTier.FREE]["monthly"],
+                "features": ["5 requests per month", "Meeting history", "Export functionality"]
+            },
+            {
+                "id": UserTier.PRO,
+                "name": "Pro",
+                "price": 29,
+                "price_yearly": 290,
+                "requests_per_day": -1,
+                "requests_per_month": UserTier.LIMITS[UserTier.PRO]["monthly"],
+                "features": ["50 requests per month", "Priority processing", "All export formats", "Email support"]
+            },
+            {
+                "id": UserTier.ENTERPRISE,
+                "name": "Enterprise",
+                "price": 99,
+                "price_yearly": 990,
+                "requests_per_day": -1,
+                "requests_per_month": -1,
+                "features": ["Unlimited requests", "Dedicated support", "Custom integrations", "SLA guarantee"]
+            }
+        ]
+    }
+
+
+# =========================================================================
+# BILLING ENDPOINTS (Stripe)
+# =========================================================================
+
+class CheckoutRequest(BaseModel):
+    """Request for creating a checkout session."""
+    tier: str = Field(default="pro", pattern="^(pro|enterprise)$")
+    interval: str = Field(default="monthly", pattern="^(monthly|yearly)$")
+
+
+@app.post("/api/billing/checkout")
+async def create_checkout(
+    request: CheckoutRequest,
+    user: UserResponse = Depends(require_auth)
+):
+    """
+    Create a Stripe Checkout session for subscription upgrade.
+
+    Requires authentication. Returns URL to redirect user to Stripe Checkout.
+    """
+    checkout_url = await create_checkout_session(
+        user_id=user.id,
+        email=user.email,
+        tier=request.tier,
+        interval=request.interval
+    )
+    return {"url": checkout_url}
+
+
+@app.get("/api/billing/portal")
+async def get_billing_portal(user: UserResponse = Depends(require_auth)):
+    """
+    Get URL for Stripe Customer Portal.
+
+    Allows users to manage their subscription, update payment method, etc.
+    """
+    portal_url = await create_portal_session(
+        user_id=user.id,
+        email=user.email
+    )
+    return {"url": portal_url}
+
+
+@app.get("/api/billing/status")
+async def get_billing_status(user: UserResponse = Depends(require_auth)):
+    """
+    Get current subscription status for authenticated user.
+
+    Returns subscription details including tier, period end, etc.
+    """
+    status = await get_subscription_status(user.email)
+    return status
+
+
+@app.post("/api/billing/webhook")
+async def stripe_webhook(request: Request):
+    """
+    Stripe webhook endpoint.
+
+    Receives subscription lifecycle events from Stripe.
+    Must be configured in Stripe Dashboard.
+    """
+    return await handle_webhook(request)
+
+
+@app.get("/api/billing/configured")
+async def billing_configured():
+    """Check if Stripe billing is configured."""
+    return {"configured": is_stripe_configured()}
 
 
 @app.get("/api/templates", response_model=List[ExampleTemplate])
@@ -245,11 +456,26 @@ async def delete_meeting(meeting_id: str):
 
 
 @app.post("/api/meetings/{meeting_id}/discuss")
-async def submit_situation(meeting_id: str, request: SubmitSituationRequest):
+async def submit_situation(
+    meeting_id: str,
+    request: SubmitSituationRequest,
+    http_request: Request,
+    user: Optional[UserResponse] = Depends(get_optional_user)
+):
     """
     Submit a business situation and run the complete executive board process.
     Includes: perspectives, cross-evaluation, optional debate, optional risk matrix, synthesis.
+
+    This endpoint is rate-limited:
+    - Anonymous: 2 requests/day
+    - Free tier: 5 requests/month
+    - Pro tier: 50 requests/month
+    - Enterprise: Unlimited
     """
+    # Check usage limits before processing (this will raise 429 if limit exceeded)
+    tracker = get_usage_tracker()
+    usage_info = tracker.check_and_record_request(http_request, user)
+
     # Validate meeting ID format
     if not validate_meeting_id(meeting_id):
         raise HTTPException(status_code=400, detail="Invalid meeting ID format")
@@ -292,23 +518,35 @@ async def submit_situation(meeting_id: str, request: SubmitSituationRequest):
         risk_matrix=risk_matrix
     )
 
-    # Return the complete response with metadata
+    # Return the complete response with metadata and usage info
     return {
         "stage1_perspectives": stage1_results,
         "stage2_evaluations": stage2_results,
         "stage2_5_debate": debate_results,
         "stage3_synthesis": stage3_result,
         "risk_matrix": risk_matrix,
-        "metadata": metadata
+        "metadata": metadata,
+        "usage": usage_info
     }
 
 
 @app.post("/api/meetings/{meeting_id}/discuss/stream")
-async def submit_situation_stream(meeting_id: str, request: SubmitSituationRequest):
+async def submit_situation_stream(
+    meeting_id: str,
+    request: SubmitSituationRequest,
+    http_request: Request,
+    user: Optional[UserResponse] = Depends(get_optional_user)
+):
     """
     Submit a business situation and stream the executive board process.
     Returns Server-Sent Events as each stage completes.
+
+    This endpoint is rate-limited (same limits as /discuss).
     """
+    # Check usage limits before processing (this will raise 429 if limit exceeded)
+    tracker = get_usage_tracker()
+    usage_info = tracker.check_and_record_request(http_request, user)
+
     # Validate meeting ID format
     if not validate_meeting_id(meeting_id):
         raise HTTPException(status_code=400, detail="Invalid meeting ID format")
@@ -326,6 +564,9 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
 
     async def event_generator():
         try:
+            # Send usage info first
+            yield f"data: {json.dumps({'type': 'usage', 'data': usage_info})}\n\n"
+
             # Add the business situation
             storage.add_situation(meeting_id, request.content)
 
@@ -409,15 +650,26 @@ async def submit_situation_stream(meeting_id: str, request: SubmitSituationReque
 
 
 @app.post("/api/compare")
-async def compare_scenarios_endpoint(request: CompareScenarioRequest):
+async def compare_scenarios_endpoint(
+    request: CompareScenarioRequest,
+    http_request: Request,
+    user: Optional[UserResponse] = Depends(get_optional_user)
+):
     """
     Compare multiple business scenarios side-by-side.
     Runs the council process on each scenario and generates a comparison.
+
+    Note: This counts as multiple requests based on the number of scenarios.
     """
     if len(request.scenarios) < 2:
         raise HTTPException(status_code=400, detail="At least 2 scenarios required")
     if len(request.scenarios) > 4:
         raise HTTPException(status_code=400, detail="Maximum 4 scenarios allowed")
+
+    # Check usage limits - comparison counts as one request per scenario
+    tracker = get_usage_tracker()
+    for _ in request.scenarios:
+        tracker.check_and_record_request(http_request, user)
 
     result = await compare_scenarios(
         request.scenarios,

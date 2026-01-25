@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { useDropzone } from 'react-dropzone'
+import { createClient } from '@supabase/supabase-js'
 import {
   Upload,
   FileText,
@@ -33,11 +34,21 @@ import {
   FlaskConical,
   Truck,
   HardHat,
-  Globe
+  Globe,
+  LogIn,
+  LogOut,
+  User,
+  CreditCard,
+  AlertOctagon
 } from 'lucide-react'
 import './App.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+
+// Supabase client - uses public anon key (safe for frontend)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null
 
 // Translations - German is default
 const TRANSLATIONS = {
@@ -107,6 +118,40 @@ const TRANSLATIONS = {
     // Misc
     all: 'Alle',
     avg: 'Durchschn.',
+
+    // Auth
+    login: 'Anmelden',
+    logout: 'Abmelden',
+    register: 'Registrieren',
+    email: 'E-Mail',
+    password: 'Passwort',
+    loginTitle: 'Anmelden',
+    registerTitle: 'Registrieren',
+    noAccount: 'Noch kein Konto?',
+    hasAccount: 'Bereits ein Konto?',
+    loginError: 'Anmeldung fehlgeschlagen. Bitte prüfen Sie Ihre Zugangsdaten.',
+    registerError: 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.',
+    registerSuccess: 'Registrierung erfolgreich! Bitte prüfen Sie Ihre E-Mails zur Bestätigung.',
+
+    // Usage & Tiers
+    usage: 'Nutzung',
+    remaining: 'Verbleibend',
+    requestsRemaining: 'Anfragen verbleibend',
+    requestsToday: 'Heute',
+    requestsMonth: 'Diesen Monat',
+    unlimited: 'Unbegrenzt',
+    upgrade: 'Upgrade',
+    upgradeToPro: 'Auf Pro upgraden',
+    limitReached: 'Limit erreicht',
+    limitReachedTitle: 'Anfragelimit erreicht',
+    limitReachedAnon: 'Sie haben Ihr tägliches Limit von 2 kostenlosen Anfragen erreicht. Erstellen Sie ein kostenloses Konto für 5 Anfragen pro Monat, oder upgraden Sie auf Pro für 50 Anfragen.',
+    limitReachedFree: 'Sie haben Ihr monatliches Limit von 5 Anfragen erreicht. Upgraden Sie auf Pro für 50 Anfragen pro Monat.',
+    createAccount: 'Kostenloses Konto erstellen',
+    tier: 'Tarif',
+    tierAnonymous: 'Anonym',
+    tierFree: 'Kostenlos',
+    tierPro: 'Pro',
+    tierEnterprise: 'Enterprise',
   },
   en: {
     // Header
@@ -174,6 +219,40 @@ const TRANSLATIONS = {
     // Misc
     all: 'All',
     avg: 'Avg',
+
+    // Auth
+    login: 'Sign In',
+    logout: 'Sign Out',
+    register: 'Register',
+    email: 'Email',
+    password: 'Password',
+    loginTitle: 'Sign In',
+    registerTitle: 'Create Account',
+    noAccount: "Don't have an account?",
+    hasAccount: 'Already have an account?',
+    loginError: 'Login failed. Please check your credentials.',
+    registerError: 'Registration failed. Please try again.',
+    registerSuccess: 'Registration successful! Please check your email to confirm.',
+
+    // Usage & Tiers
+    usage: 'Usage',
+    remaining: 'Remaining',
+    requestsRemaining: 'requests remaining',
+    requestsToday: 'Today',
+    requestsMonth: 'This month',
+    unlimited: 'Unlimited',
+    upgrade: 'Upgrade',
+    upgradeToPro: 'Upgrade to Pro',
+    limitReached: 'Limit Reached',
+    limitReachedTitle: 'Request Limit Reached',
+    limitReachedAnon: 'You have reached your daily limit of 2 free requests. Create a free account for 5 requests per month, or upgrade to Pro for 50 requests.',
+    limitReachedFree: 'You have reached your monthly limit of 5 requests. Upgrade to Pro for 50 requests per month.',
+    createAccount: 'Create Free Account',
+    tier: 'Plan',
+    tierAnonymous: 'Anonymous',
+    tierFree: 'Free',
+    tierPro: 'Pro',
+    tierEnterprise: 'Enterprise',
   }
 }
 
@@ -594,6 +673,225 @@ function TemplateSelector({ templates, onSelect, t }) {
   )
 }
 
+// Auth Modal Component
+function AuthModal({ isOpen, onClose, onSuccess, t, initialMode = 'login' }) {
+  const [mode, setMode] = useState(initialMode)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    setMode(initialMode)
+  }, [initialMode])
+
+  if (!isOpen) return null
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setMessage('')
+    setLoading(true)
+
+    try {
+      if (mode === 'login') {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.detail || t.loginError)
+        }
+
+        const data = await response.json()
+        // Store token in localStorage for API calls
+        localStorage.setItem('auth_token', data.access_token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        onSuccess(data.user, data.access_token)
+        onClose()
+      } else {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+
+        if (!response.ok) {
+          const data = await response.json()
+          throw new Error(data.detail || t.registerError)
+        }
+
+        const data = await response.json()
+        if (data.access_token) {
+          localStorage.setItem('auth_token', data.access_token)
+          localStorage.setItem('user', JSON.stringify(data.user))
+          onSuccess(data.user, data.access_token)
+          onClose()
+        } else {
+          setMessage(t.registerSuccess)
+          setMode('login')
+        }
+      }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="auth-modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} type="button">
+          <X size={24} />
+        </button>
+
+        <h2>{mode === 'login' ? t.loginTitle : t.registerTitle}</h2>
+
+        {error && (
+          <div className="auth-error">
+            <AlertCircle size={16} />
+            {error}
+          </div>
+        )}
+
+        {message && (
+          <div className="auth-message">
+            <CheckCircle2 size={16} />
+            {message}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="auth-email">{t.email}</label>
+            <input
+              id="auth-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="auth-password">{t.password}</label>
+            <input
+              id="auth-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              disabled={loading}
+            />
+          </div>
+
+          <button type="submit" className="auth-submit-btn" disabled={loading}>
+            {loading ? <Loader2 size={20} className="spinning" /> : null}
+            {mode === 'login' ? t.login : t.register}
+          </button>
+        </form>
+
+        <div className="auth-switch">
+          {mode === 'login' ? (
+            <p>
+              {t.noAccount}{' '}
+              <button type="button" onClick={() => setMode('register')}>
+                {t.register}
+              </button>
+            </p>
+          ) : (
+            <p>
+              {t.hasAccount}{' '}
+              <button type="button" onClick={() => setMode('login')}>
+                {t.login}
+              </button>
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Limit Reached Modal
+function LimitReachedModal({ isOpen, onClose, onLogin, onRegister, tier, t }) {
+  if (!isOpen) return null
+
+  const isAnonymous = tier === 'anonymous'
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="limit-modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} type="button">
+          <X size={24} />
+        </button>
+
+        <div className="limit-icon">
+          <AlertOctagon size={48} />
+        </div>
+
+        <h2>{t.limitReachedTitle}</h2>
+        <p>{isAnonymous ? t.limitReachedAnon : t.limitReachedFree}</p>
+
+        <div className="limit-actions">
+          {isAnonymous ? (
+            <>
+              <button className="primary-btn" onClick={onRegister} type="button">
+                <User size={20} />
+                {t.createAccount}
+              </button>
+              <button className="secondary-btn" onClick={onLogin} type="button">
+                <LogIn size={20} />
+                {t.login}
+              </button>
+            </>
+          ) : (
+            <button className="primary-btn" onClick={() => window.open('/upgrade', '_blank')} type="button">
+              <CreditCard size={20} />
+              {t.upgradeToPro}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Usage Badge Component
+function UsageBadge({ usage, user, t, onClick }) {
+  if (!usage) return null
+
+  const remaining = usage.remaining_monthly >= 0 ? usage.remaining_monthly : null
+  const isUnlimited = remaining === null || remaining === -1
+  const isLow = remaining !== null && remaining <= 2 && !isUnlimited
+
+  const tierName = user?.tier || 'anonymous'
+  const tierLabel = {
+    anonymous: t.tierAnonymous,
+    free: t.tierFree,
+    pro: t.tierPro,
+    enterprise: t.tierEnterprise
+  }[tierName] || tierName
+
+  return (
+    <button className={`usage-badge ${isLow ? 'low' : ''}`} onClick={onClick} type="button">
+      <span className="tier-label">{tierLabel}</span>
+      {isUnlimited ? (
+        <span className="usage-count">{t.unlimited}</span>
+      ) : (
+        <span className="usage-count">{remaining} {t.remaining}</span>
+      )}
+    </button>
+  )
+}
+
 function IndustrySelector({ industries, onSelect, isLoading, t, lang }) {
   if (isLoading) {
     return (
@@ -651,6 +949,17 @@ function App() {
     localStorage.setItem('language', newLang)
   }
 
+  // Auth state
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user')
+    return saved ? JSON.parse(saved) : null
+  })
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem('auth_token'))
+  const [usage, setUsage] = useState(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [authModalMode, setAuthModalMode] = useState('login')
+  const [showLimitModal, setShowLimitModal] = useState(false)
+
   // Industry state - persisted in localStorage
   const [selectedIndustry, setSelectedIndustry] = useState(() => {
     const saved = localStorage.getItem('selectedIndustry')
@@ -684,6 +993,48 @@ function App() {
     t.stageRiskAnalysis,
     t.stageSynthesis
   ]
+
+  // Auth functions
+  const handleAuthSuccess = (userData, token) => {
+    setUser(userData)
+    setAuthToken(token)
+    fetchUsage(token)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user')
+    setUser(null)
+    setAuthToken(null)
+    setUsage(null)
+    fetchUsage(null) // Fetch anonymous usage
+  }
+
+  const fetchUsage = useCallback(async (token = authToken) => {
+    try {
+      const headers = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      const response = await fetch(`${API_URL}/api/usage`, { headers })
+      if (response.ok) {
+        const data = await response.json()
+        setUsage(data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch usage:', err)
+    }
+  }, [authToken])
+
+  const openAuthModal = (mode = 'login') => {
+    setAuthModalMode(mode)
+    setShowAuthModal(true)
+  }
+
+  // Fetch usage on mount and when auth changes
+  useEffect(() => {
+    fetchUsage()
+  }, [fetchUsage])
 
   // Fetch industries on mount
   useEffect(() => {
@@ -933,16 +1284,36 @@ function App() {
         fullSituation += '\n\nAttached Documents:' + fileContents.join('')
       }
 
+      // Build headers with auth token if available
+      const headers = { 'Content-Type': 'application/json' }
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`
+      }
+
       // Use streaming endpoint
       const response = await fetch(`${API_URL}/api/meetings/${meetingId}/discuss/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           content: fullSituation,
           include_debate: includeDebate,
           include_risk_matrix: includeRiskMatrix
         })
       })
+
+      // Handle rate limit exceeded
+      if (response.status === 429) {
+        const errorData = await response.json()
+        setError(errorData.detail?.message || t.limitReached)
+        setShowLimitModal(true)
+        setIsLoading(false)
+        return
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Request failed')
+      }
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
@@ -967,6 +1338,10 @@ function App() {
               const data = JSON.parse(line.slice(6))
 
               switch (data.type) {
+                case 'usage':
+                  // Update usage info from stream
+                  setUsage(data.data)
+                  break
                 case 'stage1_start':
                   setCurrentStage(0)
                   break
@@ -1028,6 +1403,8 @@ function App() {
     } finally {
       setIsLoading(false)
       setCurrentStage(-1)
+      // Refresh usage after request
+      fetchUsage()
     }
   }
 
@@ -1065,6 +1442,37 @@ function App() {
           </div>
         </div>
         <div className="header-actions">
+          {/* Usage Badge */}
+          <UsageBadge
+            usage={usage}
+            user={user}
+            t={t}
+            onClick={() => !user && openAuthModal('register')}
+          />
+
+          {/* Auth buttons */}
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="header-btn"
+              type="button"
+              aria-label={t.logout}
+            >
+              <LogOut size={20} />
+              <span className="btn-label">{t.logout}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => openAuthModal('login')}
+              className="header-btn auth-btn"
+              type="button"
+              aria-label={t.login}
+            >
+              <LogIn size={20} />
+              <span className="btn-label">{t.login}</span>
+            </button>
+          )}
+
           <button
             onClick={toggleLanguage}
             className="header-btn lang-toggle-btn"
@@ -1350,6 +1758,31 @@ function App() {
           {t.footerFeatures}
         </p>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+        t={t}
+        initialMode={authModalMode}
+      />
+
+      {/* Limit Reached Modal */}
+      <LimitReachedModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        onLogin={() => {
+          setShowLimitModal(false)
+          openAuthModal('login')
+        }}
+        onRegister={() => {
+          setShowLimitModal(false)
+          openAuthModal('register')
+        }}
+        tier={usage?.tier || 'anonymous'}
+        t={t}
+      />
     </div>
   )
 }
