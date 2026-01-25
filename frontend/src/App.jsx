@@ -32,11 +32,150 @@ import {
   Zap,
   FlaskConical,
   Truck,
-  HardHat
+  HardHat,
+  Globe
 } from 'lucide-react'
 import './App.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+
+// Translations - German is default
+const TRANSLATIONS = {
+  de: {
+    // Header
+    appTitle: 'Vorstandsgremium',
+    appSubtitle: 'Entscheidungsunterstützung für deutsche Unternehmen',
+    changeIndustry: 'Branche wechseln',
+    history: 'Verlauf',
+    export: 'Exportieren',
+
+    // Industry Selector
+    selectIndustry: 'Wählen Sie Ihre Branche',
+    selectIndustryDesc: 'Wählen Sie Ihre Branche, um die Vorstandszusammensetzung und Szenarien anzupassen',
+    loadingIndustries: 'Branchen werden geladen...',
+
+    // Main Input
+    presentSituation: 'Geschäftssituation präsentieren',
+    templates: 'Vorlagen',
+    situationPlaceholder: 'Beschreiben Sie die Geschäftssituation, Herausforderung oder Entscheidung, zu der Sie Beratung benötigen...\n\nBeispiel: Wir erwägen, unsere Produktionskapazität durch den Bau einer neuen Fabrik in Osteuropa zu erweitern. Welche Faktoren sollten wir berücksichtigen?',
+    dragDropFiles: 'Dokumente hierher ziehen oder klicken zum Auswählen',
+    fileTypes: 'PDF, DOC, DOCX, TXT, CSV, XLS, XLSX (max 5MB pro Datei)',
+    includeDebate: 'Debattenphase einschließen',
+    generateRiskMatrix: 'Risikomatrix erstellen',
+    consultingBoard: 'Vorstand wird konsultiert...',
+    conveneBoard: 'Vorstand einberufen',
+
+    // Stages
+    stagePerspectives: 'Perspektiven',
+    stageEvaluation: 'Bewertung',
+    stageDebate: 'Debatte',
+    stageRiskAnalysis: 'Risikoanalyse',
+    stageSynthesis: 'Synthese',
+
+    // Results
+    expandAll: 'Alle aufklappen',
+    collapseAll: 'Alle zuklappen',
+    copySynthesis: 'Synthese kopieren',
+    stage1Title: 'Phase 1: Vorstandsperspektiven',
+    stage2Title: 'Phase 2: Gegenseitige Bewertungen',
+    stage2_5Title: 'Phase 2.5: Debattenantworten',
+    stage3Title: 'Phase 3: Empfehlung des Ratssprechers',
+    aggregateRankings: 'Gesamtranking',
+    keyUncertainties: 'Zentrale Unsicherheiten',
+    evaluationBy: 'Bewertung durch',
+    responds: 'antwortet',
+    debateResponse: 'Debattenantwort',
+
+    // Risk Matrix
+    riskMatrix: 'Risikomatrix',
+    risk: 'Risiko',
+    category: 'Kategorie',
+    level: 'Stufe',
+    owner: 'Verantwortlich',
+    mitigation: 'Maßnahmen',
+
+    // Meeting History
+    meetingHistory: 'Besprechungsverlauf',
+    noPreviousMeetings: 'Keine vorherigen Besprechungen',
+    discussions: 'Diskussion(en)',
+    deleteMeeting: 'Besprechung löschen',
+
+    // Footer
+    footerVersion: 'Vorstandsgremium v3.0 - Unterstützt durch mehrere KI-Modelle via OpenRouter',
+    footerFeatures: 'Funktionen: Branchenauswahl • Advocatus Diaboli • Debattenphase • Risikomatrix • Konfidenzwerte',
+
+    // Misc
+    all: 'Alle',
+    avg: 'Durchschn.',
+  },
+  en: {
+    // Header
+    appTitle: 'Executive Board Council',
+    appSubtitle: 'Decision Support for German Companies',
+    changeIndustry: 'Change Industry',
+    history: 'History',
+    export: 'Export',
+
+    // Industry Selector
+    selectIndustry: 'Select Your Industry',
+    selectIndustryDesc: 'Select your industry to customize the executive board composition and scenarios',
+    loadingIndustries: 'Loading industries...',
+
+    // Main Input
+    presentSituation: 'Present a Business Situation',
+    templates: 'Templates',
+    situationPlaceholder: 'Describe the business situation, challenge, or decision you need guidance on...\n\nExample: We are considering expanding our production capacity by building a new factory in Eastern Europe. What factors should we consider?',
+    dragDropFiles: 'Drag & drop documents here, or click to select',
+    fileTypes: 'PDF, DOC, DOCX, TXT, CSV, XLS, XLSX (max 5MB each)',
+    includeDebate: 'Include Debate Stage',
+    generateRiskMatrix: 'Generate Risk Matrix',
+    consultingBoard: 'Consulting the Board...',
+    conveneBoard: 'Convene Executive Board',
+
+    // Stages
+    stagePerspectives: 'Perspectives',
+    stageEvaluation: 'Evaluation',
+    stageDebate: 'Debate',
+    stageRiskAnalysis: 'Risk Analysis',
+    stageSynthesis: 'Synthesis',
+
+    // Results
+    expandAll: 'Expand All',
+    collapseAll: 'Collapse All',
+    copySynthesis: 'Copy Synthesis',
+    stage1Title: 'Stage 1: Executive Perspectives',
+    stage2Title: 'Stage 2: Cross-Evaluations',
+    stage2_5Title: 'Stage 2.5: Debate Responses',
+    stage3Title: "Stage 3: Council Speaker's Recommendation",
+    aggregateRankings: 'Aggregate Rankings',
+    keyUncertainties: 'Key Uncertainties',
+    evaluationBy: 'Evaluation by',
+    responds: 'responds',
+    debateResponse: 'Debate Response',
+
+    // Risk Matrix
+    riskMatrix: 'Risk Matrix',
+    risk: 'Risk',
+    category: 'Category',
+    level: 'Level',
+    owner: 'Owner',
+    mitigation: 'Mitigation',
+
+    // Meeting History
+    meetingHistory: 'Meeting History',
+    noPreviousMeetings: 'No previous meetings',
+    discussions: 'discussion(s)',
+    deleteMeeting: 'Delete meeting',
+
+    // Footer
+    footerVersion: 'Executive Board Council v3.0 - Powered by Multiple LLMs via OpenRouter',
+    footerFeatures: 'Features: Industry Selection • Devil\'s Advocate • Debate Stage • Risk Matrix • Confidence Scores',
+
+    // Misc
+    all: 'All',
+    avg: 'Avg',
+  }
+}
 
 // Default executive info (manufacturing) - will be replaced by dynamic data
 const DEFAULT_EXECUTIVE_INFO = {
@@ -99,9 +238,10 @@ const ROLE_ICONS = {
   DEVILS_ADVOCATE: '😈',
 }
 
-function ExecutiveCard({ role, title, response, confidence, uncertainties, isExpanded, onToggle, executiveInfo }) {
+function ExecutiveCard({ role, title, response, confidence, uncertainties, isExpanded, onToggle, executiveInfo, t }) {
   const info = executiveInfo[role] || { title: role, german: '', color: '#666', icon: '👤' }
   const cardId = `exec-card-${role}`
+  const translations = t || TRANSLATIONS.de
 
   const getConfidenceClass = (conf) => {
     switch (conf?.toUpperCase()) {
@@ -146,7 +286,7 @@ function ExecutiveCard({ role, title, response, confidence, uncertainties, isExp
           <ReactMarkdown>{response}</ReactMarkdown>
           {uncertainties && uncertainties.length > 0 && (
             <div className="uncertainties-section">
-              <h4><AlertTriangle size={16} /> Key Uncertainties</h4>
+              <h4><AlertTriangle size={16} /> {translations.keyUncertainties}</h4>
               <ul>
                 {uncertainties.map((u, i) => (
                   <li key={i}>{u}</li>
@@ -160,9 +300,10 @@ function ExecutiveCard({ role, title, response, confidence, uncertainties, isExp
   )
 }
 
-function EvaluationCard({ role, title, evaluation, isExpanded, onToggle, executiveInfo }) {
+function EvaluationCard({ role, title, evaluation, isExpanded, onToggle, executiveInfo, t }) {
   const info = executiveInfo[role] || { title: role, german: '', color: '#666', icon: '👤' }
   const cardId = `eval-card-${role}`
+  const translations = t || TRANSLATIONS.de
 
   return (
     <article
@@ -180,7 +321,7 @@ function EvaluationCard({ role, title, evaluation, isExpanded, onToggle, executi
         <div className="executive-info">
           <span className="executive-icon" aria-hidden="true">{info.icon}</span>
           <div>
-            <h3 id={`${cardId}-title`}>Evaluation by {info.title}</h3>
+            <h3 id={`${cardId}-title`}>{translations.evaluationBy} {info.title}</h3>
             <p className="german-title">{info.german}</p>
           </div>
         </div>
@@ -197,9 +338,10 @@ function EvaluationCard({ role, title, evaluation, isExpanded, onToggle, executi
   )
 }
 
-function DebateCard({ role, title, response, isExpanded, onToggle, executiveInfo }) {
+function DebateCard({ role, title, response, isExpanded, onToggle, executiveInfo, t }) {
   const info = executiveInfo[role] || { title: role, german: '', color: '#666', icon: '👤' }
   const cardId = `debate-card-${role}`
+  const translations = t || TRANSLATIONS.de
 
   return (
     <article
@@ -217,8 +359,8 @@ function DebateCard({ role, title, response, isExpanded, onToggle, executiveInfo
         <div className="executive-info">
           <span className="executive-icon" aria-hidden="true">{info.icon}</span>
           <div>
-            <h3 id={`${cardId}-title`}>{info.title} responds</h3>
-            <p className="german-title">Debate Response</p>
+            <h3 id={`${cardId}-title`}>{info.title} {translations.responds}</h3>
+            <p className="german-title">{translations.debateResponse}</p>
           </div>
         </div>
         <span className="toggle-btn" aria-hidden="true">
@@ -234,21 +376,22 @@ function DebateCard({ role, title, response, isExpanded, onToggle, executiveInfo
   )
 }
 
-function RiskMatrix({ risks }) {
+function RiskMatrix({ risks, t }) {
+  const translations = t || TRANSLATIONS.de
   if (!risks || risks.length === 0) return null
 
   return (
     <div className="risk-matrix">
-      <h3><Shield size={20} /> Risk Matrix</h3>
+      <h3><Shield size={20} /> {translations.riskMatrix}</h3>
       <div className="risk-table-container">
         <table className="risk-table">
           <thead>
             <tr>
-              <th>Risk</th>
-              <th>Category</th>
-              <th>Level</th>
-              <th>Owner</th>
-              <th>Mitigation</th>
+              <th>{translations.risk}</th>
+              <th>{translations.category}</th>
+              <th>{translations.level}</th>
+              <th>{translations.owner}</th>
+              <th>{translations.mitigation}</th>
             </tr>
           </thead>
           <tbody>
@@ -272,7 +415,8 @@ function RiskMatrix({ risks }) {
   )
 }
 
-function FileUploadZone({ files, setFiles }) {
+function FileUploadZone({ files, setFiles, t }) {
+  const translations = t || TRANSLATIONS.de
   const onDrop = (acceptedFiles) => {
     setFiles(prev => [...prev, ...acceptedFiles])
   }
@@ -302,8 +446,8 @@ function FileUploadZone({ files, setFiles }) {
       >
         <input {...getInputProps()} />
         <Upload size={32} aria-hidden="true" />
-        <p>Drag & drop documents here, or click to select</p>
-        <span className="file-types">PDF, DOC, DOCX, TXT, CSV, XLS, XLSX (max 5MB each)</span>
+        <p>{translations.dragDropFiles}</p>
+        <span className="file-types">{translations.fileTypes}</span>
       </div>
 
       {files.length > 0 && (
@@ -331,7 +475,7 @@ function FileUploadZone({ files, setFiles }) {
 function StageProgress({ currentStage, stages }) {
   const currentStageName = currentStage >= 0 && currentStage < stages.length
     ? stages[currentStage]
-    : 'Processing'
+    : ''
 
   return (
     <div className="stage-progress" role="progressbar" aria-valuenow={currentStage + 1} aria-valuemin="1" aria-valuemax={stages.length}>
@@ -360,14 +504,16 @@ function StageProgress({ currentStage, stages }) {
   )
 }
 
-function MeetingHistory({ meetings, onSelect, onDelete, currentMeetingId }) {
+function MeetingHistory({ meetings, onSelect, onDelete, currentMeetingId, t }) {
+  const translations = t || TRANSLATIONS.de
+
   if (!meetings || meetings.length === 0) {
     return (
       <div className="meeting-history">
-        <h3><History size={20} /> Meeting History</h3>
+        <h3><History size={20} /> {translations.meetingHistory}</h3>
         <div className="empty-history">
           <History size={32} />
-          <p>No previous meetings</p>
+          <p>{translations.noPreviousMeetings}</p>
         </div>
       </div>
     )
@@ -375,7 +521,7 @@ function MeetingHistory({ meetings, onSelect, onDelete, currentMeetingId }) {
 
   return (
     <div className="meeting-history">
-      <h3><History size={20} /> Meeting History</h3>
+      <h3><History size={20} /> {translations.meetingHistory}</h3>
       <div className="meeting-list">
         {meetings.slice(0, 10).map((meeting) => (
           <div
@@ -389,13 +535,13 @@ function MeetingHistory({ meetings, onSelect, onDelete, currentMeetingId }) {
             >
               <h4>{meeting.title}</h4>
               <p>
-                {new Date(meeting.created_at).toLocaleDateString()} • {meeting.discussion_count} discussion(s)
+                {new Date(meeting.created_at).toLocaleDateString()} • {meeting.discussion_count} {translations.discussions}
               </p>
             </button>
             <button
               onClick={() => onDelete(meeting.id)}
               className="meeting-delete-btn"
-              aria-label={`Delete ${meeting.title}`}
+              aria-label={translations.deleteMeeting}
               type="button"
             >
               <Trash2 size={14} />
@@ -407,13 +553,14 @@ function MeetingHistory({ meetings, onSelect, onDelete, currentMeetingId }) {
   )
 }
 
-function TemplateSelector({ templates, onSelect }) {
+function TemplateSelector({ templates, onSelect, t }) {
+  const translations = t || TRANSLATIONS.de
   const [selectedCategory, setSelectedCategory] = useState('all')
 
-  const categories = ['all', ...new Set(templates.map(t => t.category))]
+  const categories = ['all', ...new Set(templates.map(tmpl => tmpl.category))]
   const filteredTemplates = selectedCategory === 'all'
     ? templates
-    : templates.filter(t => t.category === selectedCategory)
+    : templates.filter(tmpl => tmpl.category === selectedCategory)
 
   return (
     <div className="template-selector">
@@ -425,7 +572,7 @@ function TemplateSelector({ templates, onSelect }) {
             className={`category-tab ${selectedCategory === cat ? 'active' : ''}`}
             type="button"
           >
-            {cat.charAt(0).toUpperCase() + cat.slice(1)}
+            {cat === 'all' ? translations.all : cat.charAt(0).toUpperCase() + cat.slice(1)}
           </button>
         ))}
       </div>
@@ -447,13 +594,13 @@ function TemplateSelector({ templates, onSelect }) {
   )
 }
 
-function IndustrySelector({ industries, onSelect, isLoading }) {
+function IndustrySelector({ industries, onSelect, isLoading, t, lang }) {
   if (isLoading) {
     return (
       <div className="industry-selector">
         <div className="industry-loading">
           <Loader2 size={48} className="spinning" />
-          <p>Loading industries...</p>
+          <p>{t.loadingIndustries}</p>
         </div>
       </div>
     )
@@ -463,8 +610,8 @@ function IndustrySelector({ industries, onSelect, isLoading }) {
     <div className="industry-selector">
       <div className="industry-header">
         <Building2 size={48} />
-        <h1>Executive Board Council</h1>
-        <p>Select your industry to customize the executive board composition and scenarios</p>
+        <h1>{t.appTitle}</h1>
+        <p>{t.selectIndustryDesc}</p>
       </div>
       <div className="industry-grid">
         {industries.map(industry => {
@@ -479,8 +626,8 @@ function IndustrySelector({ industries, onSelect, isLoading }) {
               <div className="industry-icon">
                 <IconComponent size={32} />
               </div>
-              <h3>{industry.name}</h3>
-              <p className="industry-german">{industry.german_context}</p>
+              <h3>{lang === 'de' ? industry.german_context : industry.name}</h3>
+              <p className="industry-german">{lang === 'de' ? industry.name : industry.german_context}</p>
               <p className="industry-description">{industry.description}</p>
             </button>
           )
@@ -491,6 +638,19 @@ function IndustrySelector({ industries, onSelect, isLoading }) {
 }
 
 function App() {
+  // Language state - German is default, persisted in localStorage
+  const [lang, setLang] = useState(() => {
+    const saved = localStorage.getItem('language')
+    return saved || 'de'
+  })
+  const t = TRANSLATIONS[lang]
+
+  const toggleLanguage = () => {
+    const newLang = lang === 'de' ? 'en' : 'de'
+    setLang(newLang)
+    localStorage.setItem('language', newLang)
+  }
+
   // Industry state - persisted in localStorage
   const [selectedIndustry, setSelectedIndustry] = useState(() => {
     const saved = localStorage.getItem('selectedIndustry')
@@ -518,11 +678,11 @@ function App() {
   const resultRef = useRef(null)
 
   const stages = [
-    'Perspectives',
-    'Evaluation',
-    'Debate',
-    'Risk Analysis',
-    'Synthesis'
+    t.stagePerspectives,
+    t.stageEvaluation,
+    t.stageDebate,
+    t.stageRiskAnalysis,
+    t.stageSynthesis
   ]
 
   // Fetch industries on mount
@@ -875,10 +1035,18 @@ function App() {
   if (!selectedIndustry) {
     return (
       <div className="app industry-select-mode">
+        <div className="language-toggle-floating">
+          <button onClick={toggleLanguage} className="lang-btn" type="button">
+            <Globe size={18} />
+            <span>{lang === 'de' ? 'EN' : 'DE'}</span>
+          </button>
+        </div>
         <IndustrySelector
           industries={industries}
           onSelect={handleIndustrySelect}
           isLoading={industriesLoading}
+          t={t}
+          lang={lang}
         />
       </div>
     )
@@ -892,38 +1060,47 @@ function App() {
         <div className="header-content">
           <IndustryIcon size={32} aria-hidden="true" />
           <div>
-            <h1>Executive Board Council</h1>
-            <p>{selectedIndustry.name}</p>
+            <h1>{t.appTitle}</h1>
+            <p>{lang === 'de' ? selectedIndustry.german_context : selectedIndustry.name}</p>
           </div>
         </div>
         <div className="header-actions">
           <button
+            onClick={toggleLanguage}
+            className="header-btn lang-toggle-btn"
+            type="button"
+            aria-label="Toggle language"
+          >
+            <Globe size={20} />
+            <span className="btn-label">{lang === 'de' ? 'EN' : 'DE'}</span>
+          </button>
+          <button
             onClick={changeIndustry}
             className="header-btn change-industry-btn"
             type="button"
-            aria-label="Change industry"
+            aria-label={t.changeIndustry}
           >
             <ArrowLeft size={20} />
-            <span className="btn-label">Change Industry</span>
+            <span className="btn-label">{t.changeIndustry}</span>
           </button>
           <button
             onClick={() => setShowHistory(!showHistory)}
             className={`header-btn ${showHistory ? 'active' : ''}`}
             type="button"
-            aria-label="Toggle meeting history"
+            aria-label={t.history}
           >
             <History size={20} />
-            <span className="btn-label">History</span>
+            <span className="btn-label">{t.history}</span>
           </button>
           {currentMeeting && (
             <button
               onClick={() => exportMeeting('markdown')}
               className="header-btn"
               type="button"
-              aria-label="Export meeting"
+              aria-label={t.export}
             >
               <Download size={20} />
-              <span className="btn-label">Export</span>
+              <span className="btn-label">{t.export}</span>
             </button>
           )}
         </div>
@@ -937,6 +1114,7 @@ function App() {
               onSelect={loadMeeting}
               onDelete={deleteMeeting}
               currentMeetingId={currentMeeting?.id}
+              t={t}
             />
           </aside>
         )}
@@ -945,14 +1123,14 @@ function App() {
           <div className="input-section">
             <div className="section-header">
               <MessageSquare size={24} aria-hidden="true" />
-              <h2>Present a Business Situation</h2>
+              <h2>{t.presentSituation}</h2>
               <button
                 onClick={() => setShowTemplates(!showTemplates)}
                 className={`template-toggle ${showTemplates ? 'active' : ''}`}
                 type="button"
               >
                 <Lightbulb size={16} />
-                Templates
+                {t.templates}
               </button>
             </div>
 
@@ -963,29 +1141,28 @@ function App() {
                   setSituation(prompt)
                   setShowTemplates(false)
                 }}
+                t={t}
               />
             )}
 
             <form onSubmit={handleSubmit}>
               <label htmlFor="situation-input" className="sr-only">
-                Business Situation Description
+                {t.presentSituation}
               </label>
               <textarea
                 id="situation-input"
                 value={situation}
                 onChange={(e) => setSituation(e.target.value)}
-                placeholder="Describe the business situation, challenge, or decision you need guidance on...
-
-Example: We are considering expanding our production capacity by building a new factory in Eastern Europe. What factors should we consider?"
+                placeholder={t.situationPlaceholder}
                 rows={6}
                 disabled={isLoading}
                 aria-describedby="situation-help"
               />
               <p id="situation-help" className="sr-only">
-                Enter your business situation or challenge. The executive board will analyze it from multiple perspectives.
+                {t.presentSituation}
               </p>
 
-              <FileUploadZone files={files} setFiles={setFiles} />
+              <FileUploadZone files={files} setFiles={setFiles} t={t} />
 
               <div className="options-row">
                 <label className="option-checkbox">
@@ -995,7 +1172,7 @@ Example: We are considering expanding our production capacity by building a new 
                     onChange={(e) => setIncludeDebate(e.target.checked)}
                     disabled={isLoading}
                   />
-                  <span>Include Debate Stage</span>
+                  <span>{t.includeDebate}</span>
                 </label>
                 <label className="option-checkbox">
                   <input
@@ -1004,7 +1181,7 @@ Example: We are considering expanding our production capacity by building a new 
                     onChange={(e) => setIncludeRiskMatrix(e.target.checked)}
                     disabled={isLoading}
                   />
-                  <span>Generate Risk Matrix</span>
+                  <span>{t.generateRiskMatrix}</span>
                 </label>
               </div>
 
@@ -1016,12 +1193,12 @@ Example: We are considering expanding our production capacity by building a new 
                 {isLoading ? (
                   <>
                     <Loader2 size={20} className="spinning" aria-hidden="true" />
-                    Consulting the Board...
+                    {t.consultingBoard}
                   </>
                 ) : (
                   <>
                     <Send size={20} aria-hidden="true" />
-                    Convene Executive Board
+                    {t.conveneBoard}
                   </>
                 )}
               </button>
@@ -1043,10 +1220,10 @@ Example: We are considering expanding our production capacity by building a new 
             <div className="results-section" ref={resultRef}>
               <div className="results-controls">
                 <button onClick={expandAllCards} className="control-btn" type="button">
-                  Expand All
+                  {t.expandAll}
                 </button>
                 <button onClick={collapseAllCards} className="control-btn" type="button">
-                  Collapse All
+                  {t.collapseAll}
                 </button>
                 {results.stage3_synthesis?.response && (
                   <button
@@ -1054,7 +1231,7 @@ Example: We are considering expanding our production capacity by building a new 
                     className="control-btn"
                     type="button"
                   >
-                    <Copy size={16} /> Copy Synthesis
+                    <Copy size={16} /> {t.copySynthesis}
                   </button>
                 )}
               </div>
@@ -1063,7 +1240,7 @@ Example: We are considering expanding our production capacity by building a new 
               <div className="stage-section">
                 <div className="stage-header">
                   <Users size={24} aria-hidden="true" />
-                  <h2>Stage 1: Executive Perspectives</h2>
+                  <h2>{t.stage1Title}</h2>
                 </div>
                 <div className="cards-grid">
                   {results.stage1_perspectives?.map((perspective) => (
@@ -1077,6 +1254,7 @@ Example: We are considering expanding our production capacity by building a new 
                       isExpanded={expandedCards[`s1-${perspective.role}`]}
                       onToggle={() => toggleCard(`s1-${perspective.role}`)}
                       executiveInfo={executiveInfo}
+                      t={t}
                     />
                   ))}
                 </div>
@@ -1086,18 +1264,18 @@ Example: We are considering expanding our production capacity by building a new 
               <div className="stage-section">
                 <div className="stage-header">
                   <MessageSquare size={24} aria-hidden="true" />
-                  <h2>Stage 2: Cross-Evaluations</h2>
+                  <h2>{t.stage2Title}</h2>
                 </div>
 
                 {results.metadata?.aggregate_rankings && (
                   <div className="rankings-summary">
-                    <h3>Aggregate Rankings</h3>
+                    <h3>{t.aggregateRankings}</h3>
                     <div className="rankings-list">
                       {results.metadata.aggregate_rankings.map((ranking, index) => (
                         <div key={ranking.role} className="ranking-item">
                           <span className="rank">#{index + 1}</span>
                           <span className="rank-title">{ranking.title}</span>
-                          <span className="rank-score">Avg: {ranking.average_rank.toFixed(2)}</span>
+                          <span className="rank-score">{t.avg}: {ranking.average_rank.toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
@@ -1114,6 +1292,7 @@ Example: We are considering expanding our production capacity by building a new 
                       isExpanded={expandedCards[`s2-${evaluation.role}`]}
                       onToggle={() => toggleCard(`s2-${evaluation.role}`)}
                       executiveInfo={executiveInfo}
+                      t={t}
                     />
                   ))}
                 </div>
@@ -1124,7 +1303,7 @@ Example: We are considering expanding our production capacity by building a new 
                 <div className="stage-section debate-section">
                   <div className="stage-header">
                     <RefreshCw size={24} aria-hidden="true" />
-                    <h2>Stage 2.5: Debate Responses</h2>
+                    <h2>{t.stage2_5Title}</h2>
                   </div>
                   <div className="cards-grid">
                     {results.stage2_5_debate.map((debate) => (
@@ -1136,6 +1315,7 @@ Example: We are considering expanding our production capacity by building a new 
                         isExpanded={expandedCards[`debate-${debate.role}`]}
                         onToggle={() => toggleCard(`debate-${debate.role}`)}
                         executiveInfo={executiveInfo}
+                        t={t}
                       />
                     ))}
                   </div>
@@ -1145,7 +1325,7 @@ Example: We are considering expanding our production capacity by building a new 
               {/* Risk Matrix */}
               {results.risk_matrix?.risks && results.risk_matrix.risks.length > 0 && (
                 <div className="stage-section risk-section">
-                  <RiskMatrix risks={results.risk_matrix.risks} />
+                  <RiskMatrix risks={results.risk_matrix.risks} t={t} />
                 </div>
               )}
 
@@ -1153,7 +1333,7 @@ Example: We are considering expanding our production capacity by building a new 
               <div className="stage-section synthesis-section">
                 <div className="stage-header">
                   <CheckCircle2 size={24} aria-hidden="true" />
-                  <h2>Stage 3: Council Speaker's Recommendation</h2>
+                  <h2>{t.stage3Title}</h2>
                 </div>
                 <div className="synthesis-content">
                   <ReactMarkdown>{results.stage3_synthesis?.response}</ReactMarkdown>
@@ -1165,9 +1345,9 @@ Example: We are considering expanding our production capacity by building a new 
       </div>
 
       <footer className="footer">
-        <p>Executive Board Council v3.0 - Powered by Multiple LLMs via OpenRouter</p>
+        <p>{t.footerVersion}</p>
         <p className="footer-features">
-          Features: Industry Selection • Devil's Advocate • Debate Stage • Risk Matrix • Confidence Scores
+          {t.footerFeatures}
         </p>
       </footer>
     </div>
