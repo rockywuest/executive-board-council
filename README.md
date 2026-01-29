@@ -139,3 +139,11 @@ Here are some example business situations to test:
 ## License
 
 MIT
+
+---
+
+## Support
+
+If you find this useful, consider buying me a coffee ☕
+
+https://ko-fi.com/rockywuest
