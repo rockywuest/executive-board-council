@@ -273,9 +273,9 @@ class UsageTracker:
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail={
                     "error": "rate_limit_exceeded",
-                    "message": reason or "Your IP has been temporarily blocked",
+                    "message": reason or "Ihre IP wurde vorübergehend blockiert",
                     "action": "create_account",
-                    "hint": "Create a free account to continue using the service"
+                    "hint": "Erstellen Sie ein kostenloses Konto, um den Dienst weiter zu nutzen"
                 }
             )
 
@@ -305,9 +305,9 @@ class UsageTracker:
                         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                         detail={
                             "error": "rate_limit_exceeded",
-                            "message": f"Monthly limit of {monthly_limit} requests reached",
+                            "message": f"Monatliches Limit von {monthly_limit} Anfragen erreicht",
                             "action": "upgrade",
-                            "hint": "Upgrade to Pro for more requests",
+                            "hint": "Upgraden Sie auf Pro für mehr Anfragen",
                             "used": used_month,
                             "limit": monthly_limit
                         }
@@ -344,9 +344,9 @@ class UsageTracker:
                         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                         detail={
                             "error": "rate_limit_exceeded",
-                            "message": f"Free limit of {daily_limit} requests per day reached",
+                            "message": f"Kostenloses Limit von {daily_limit} Anfragen pro Tag erreicht",
                             "action": "create_account",
-                            "hint": "Create a free account for 5 requests per month, or upgrade to Pro for 50",
+                            "hint": "Erstellen Sie ein kostenloses Konto für 5 Anfragen pro Monat oder upgraden Sie auf Pro für 50",
                             "used": used_today,
                             "limit": daily_limit
                         }

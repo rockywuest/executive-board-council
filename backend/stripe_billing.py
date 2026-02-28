@@ -104,14 +104,14 @@ async def create_checkout_session(
     if not is_stripe_configured():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Payment system not configured"
+            detail="Zahlungssystem nicht konfiguriert"
         )
 
     price_id = get_price_id(tier, interval)
     if not price_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid tier or interval: {tier}/{interval}"
+            detail=f"Ungültiger Tarif oder Intervall: {tier}/{interval}"
         )
 
     try:
@@ -153,7 +153,7 @@ async def create_checkout_session(
     except stripe.error.StripeError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Payment error: {str(e)}"
+            detail=f"Zahlungsfehler: {str(e)}"
         )
 
 
@@ -174,7 +174,7 @@ async def create_portal_session(user_id: str, email: str) -> str:
     if not is_stripe_configured():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Payment system not configured"
+            detail="Zahlungssystem nicht konfiguriert"
         )
 
     try:
@@ -183,7 +183,7 @@ async def create_portal_session(user_id: str, email: str) -> str:
         if not customers.data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No subscription found"
+                detail="Kein Abonnement gefunden"
             )
 
         customer = customers.data[0]
@@ -199,7 +199,7 @@ async def create_portal_session(user_id: str, email: str) -> str:
     except stripe.error.StripeError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Portal error: {str(e)}"
+            detail=f"Portal-Fehler: {str(e)}"
         )
 
 
@@ -225,7 +225,7 @@ async def handle_webhook(request: Request) -> dict:
     if not STRIPE_WEBHOOK_SECRET:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Webhook not configured"
+            detail="Webhook nicht konfiguriert"
         )
 
     # Get raw body and signature
@@ -235,7 +235,7 @@ async def handle_webhook(request: Request) -> dict:
     if not sig_header:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Missing signature header"
+            detail="Fehlender Signatur-Header"
         )
 
     try:
@@ -245,12 +245,12 @@ async def handle_webhook(request: Request) -> dict:
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid payload"
+            detail="Ungültige Nutzlast"
         )
     except stripe.error.SignatureVerificationError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid signature"
+            detail="Ungültige Signatur"
         )
 
     # Handle events

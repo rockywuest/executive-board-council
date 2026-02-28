@@ -360,7 +360,7 @@ async def get_industry_details(industry_id: str):
     """Get full details for a specific industry."""
     industry = get_industry(industry_id)
     if not industry:
-        raise HTTPException(status_code=404, detail=f"Industry not found: {industry_id}")
+        raise HTTPException(status_code=404, detail=f"Branche nicht gefunden: {industry_id}")
     return {
         "id": industry["id"],
         "name": industry["name"],
@@ -375,7 +375,7 @@ async def get_industry_executive_roles(industry_id: str):
     """Get executive roles configured for a specific industry."""
     executives = get_industry_executives(industry_id)
     if not executives:
-        raise HTTPException(status_code=404, detail=f"Industry not found: {industry_id}")
+        raise HTTPException(status_code=404, detail=f"Branche nicht gefunden: {industry_id}")
     return {
         role_key: {
             "title": role_config["title"],
@@ -390,7 +390,7 @@ async def get_industry_template_list(industry_id: str):
     """Get example templates for a specific industry."""
     templates = get_industry_templates(industry_id)
     if templates is None:
-        raise HTTPException(status_code=404, detail=f"Industry not found: {industry_id}")
+        raise HTTPException(status_code=404, detail=f"Branche nicht gefunden: {industry_id}")
     return templates
 
 
@@ -417,7 +417,7 @@ async def create_meeting(request: CreateMeetingRequest):
     """Create a new executive board meeting."""
     # Validate industry if provided
     if request.industry and request.industry not in INDUSTRIES:
-        raise HTTPException(status_code=400, detail=f"Unknown industry: {request.industry}")
+        raise HTTPException(status_code=400, detail=f"Unbekannte Branche: {request.industry}")
 
     meeting_id = str(uuid.uuid4())
     meeting = storage.create_meeting(meeting_id, industry=request.industry)
@@ -437,10 +437,10 @@ def validate_meeting_id(meeting_id: str) -> bool:
 async def get_meeting(meeting_id: str):
     """Get a specific meeting with all its discussions."""
     if not validate_meeting_id(meeting_id):
-        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
+        raise HTTPException(status_code=400, detail="Ungültiges Meeting-ID-Format")
     meeting = storage.get_meeting(meeting_id)
     if meeting is None:
-        raise HTTPException(status_code=404, detail="Meeting not found")
+        raise HTTPException(status_code=404, detail="Sitzung nicht gefunden")
     return meeting
 
 
@@ -448,10 +448,10 @@ async def get_meeting(meeting_id: str):
 async def delete_meeting(meeting_id: str):
     """Delete a meeting."""
     if not validate_meeting_id(meeting_id):
-        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
+        raise HTTPException(status_code=400, detail="Ungültiges Meeting-ID-Format")
     success = storage.delete_meeting(meeting_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Meeting not found")
+        raise HTTPException(status_code=404, detail="Sitzung nicht gefunden")
     return {"status": "deleted", "meeting_id": meeting_id}
 
 
@@ -478,12 +478,12 @@ async def submit_situation(
 
     # Validate meeting ID format
     if not validate_meeting_id(meeting_id):
-        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
+        raise HTTPException(status_code=400, detail="Ungültiges Meeting-ID-Format")
 
     # Check if meeting exists
     meeting = storage.get_meeting(meeting_id)
     if meeting is None:
-        raise HTTPException(status_code=404, detail="Meeting not found")
+        raise HTTPException(status_code=404, detail="Sitzung nicht gefunden")
 
     # Check if this is the first discussion
     is_first_discussion = len(meeting["discussions"]) == 0
@@ -549,12 +549,12 @@ async def submit_situation_stream(
 
     # Validate meeting ID format
     if not validate_meeting_id(meeting_id):
-        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
+        raise HTTPException(status_code=400, detail="Ungültiges Meeting-ID-Format")
 
     # Check if meeting exists
     meeting = storage.get_meeting(meeting_id)
     if meeting is None:
-        raise HTTPException(status_code=404, detail="Meeting not found")
+        raise HTTPException(status_code=404, detail="Sitzung nicht gefunden")
 
     # Check if this is the first discussion
     is_first_discussion = len(meeting["discussions"]) == 0
@@ -576,12 +576,12 @@ async def submit_situation_stream(
                 title_task = asyncio.create_task(generate_meeting_title(request.content))
 
             # Stage 1: Collect executive perspectives (with confidence scores)
-            yield f"data: {json.dumps({'type': 'stage1_start', 'message': 'Collecting executive perspectives...'})}\n\n"
+            yield f"data: {json.dumps({'type': 'stage1_start', 'message': 'Vorstandsperspektiven werden gesammelt...'})}\n\n"
             stage1_results = await stage1_collect_perspectives(request.content, industry=industry)
             yield f"data: {json.dumps({'type': 'stage1_complete', 'data': stage1_results})}\n\n"
 
             # Stage 2: Cross-evaluations
-            yield f"data: {json.dumps({'type': 'stage2_start', 'message': 'Executives evaluating each others perspectives...'})}\n\n"
+            yield f"data: {json.dumps({'type': 'stage2_start', 'message': 'Vorstände bewerten gegenseitig ihre Perspektiven...'})}\n\n"
             stage2_results, label_to_role = await stage2_cross_evaluation(request.content, stage1_results, industry=industry)
             aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_role)
             yield f"data: {json.dumps({'type': 'stage2_complete', 'data': stage2_results, 'metadata': {'label_to_role': label_to_role, 'aggregate_rankings': aggregate_rankings}})}\n\n"
@@ -589,7 +589,7 @@ async def submit_situation_stream(
             # Stage 2.5: Debate (optional)
             debate_results = None
             if request.include_debate:
-                yield f"data: {json.dumps({'type': 'stage2_5_start', 'message': 'Executives debating and refining positions...'})}\n\n"
+                yield f"data: {json.dumps({'type': 'stage2_5_start', 'message': 'Vorstände debattieren und verfeinern ihre Positionen...'})}\n\n"
                 debate_results = await stage2_5_debate(request.content, stage1_results, stage2_results, label_to_role, industry=industry)
                 yield f"data: {json.dumps({'type': 'stage2_5_complete', 'data': debate_results})}\n\n"
 
@@ -597,11 +597,11 @@ async def submit_situation_stream(
             risk_matrix = None
             risk_task = None
             if request.include_risk_matrix:
-                yield f"data: {json.dumps({'type': 'risk_matrix_start', 'message': 'Generating risk matrix...'})}\n\n"
+                yield f"data: {json.dumps({'type': 'risk_matrix_start', 'message': 'Risikomatrix wird erstellt...'})}\n\n"
                 risk_task = asyncio.create_task(generate_risk_matrix(request.content, stage1_results, stage2_results, industry=industry))
 
             # Stage 3: Council Speaker synthesis
-            yield f"data: {json.dumps({'type': 'stage3_start', 'message': 'Council Speaker synthesizing final recommendation...'})}\n\n"
+            yield f"data: {json.dumps({'type': 'stage3_start', 'message': 'Vorstandssprecher erstellt Schlussempfehlung...'})}\n\n"
 
             # Wait for risk matrix if it was started
             if risk_task:
@@ -637,7 +637,7 @@ async def submit_situation_stream(
         except Exception as e:
             # Log full error internally, send generic message to client
             logger.error(f"Stream processing error: {type(e).__name__}: {e}")
-            yield f"data: {json.dumps({'type': 'error', 'message': 'Processing failed. Please try again.'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': 'Verarbeitung fehlgeschlagen. Bitte versuchen Sie es erneut.'})}\n\n"
 
     return StreamingResponse(
         event_generator(),
@@ -662,9 +662,9 @@ async def compare_scenarios_endpoint(
     Note: This counts as multiple requests based on the number of scenarios.
     """
     if len(request.scenarios) < 2:
-        raise HTTPException(status_code=400, detail="At least 2 scenarios required")
+        raise HTTPException(status_code=400, detail="Mindestens 2 Szenarien erforderlich")
     if len(request.scenarios) > 4:
-        raise HTTPException(status_code=400, detail="Maximum 4 scenarios allowed")
+        raise HTTPException(status_code=400, detail="Maximal 4 Szenarien erlaubt")
 
     # Check usage limits - comparison counts as one request per scenario
     tracker = get_usage_tracker()
@@ -687,11 +687,11 @@ async def export_meeting(meeting_id: str, format: str = "json"):
     Supported formats: json, markdown
     """
     if not validate_meeting_id(meeting_id):
-        raise HTTPException(status_code=400, detail="Invalid meeting ID format")
+        raise HTTPException(status_code=400, detail="Ungültiges Meeting-ID-Format")
 
     meeting = storage.get_meeting(meeting_id)
     if meeting is None:
-        raise HTTPException(status_code=404, detail="Meeting not found")
+        raise HTTPException(status_code=404, detail="Sitzung nicht gefunden")
 
     if format == "json":
         return meeting
@@ -707,7 +707,7 @@ async def export_meeting(meeting_id: str, format: str = "json"):
         )
 
     else:
-        raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+        raise HTTPException(status_code=400, detail=f"Nicht unterstütztes Format: {format}")
 
 
 def generate_meeting_markdown(meeting: Dict[str, Any]) -> str:

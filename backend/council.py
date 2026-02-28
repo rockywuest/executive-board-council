@@ -50,28 +50,28 @@ async def stage1_collect_perspectives(user_query: str, industry: str = "manufact
     }
 
     # Build the prompt for executives with confidence scoring
-    executive_prompt = f"""The Executive Board is meeting to discuss the following business situation:
+    executive_prompt = f"""Der Vorstand tagt, um die folgende Geschäftssituation zu besprechen:
 
 ---
 {user_query}
 ---
 
-Please analyze this situation from your specific executive perspective. Consider:
-1. Key issues and concerns from your area of responsibility
-2. Potential impacts on your domain
-3. Risks and opportunities you identify
-4. Your recommendations and priorities
+Bitte analysieren Sie diese Situation aus Ihrer spezifischen Vorstandsperspektive. Berücksichtigen Sie:
+1. Wesentliche Themen und Bedenken aus Ihrem Verantwortungsbereich
+2. Mögliche Auswirkungen auf Ihren Zuständigkeitsbereich
+3. Risiken und Chancen, die Sie identifizieren
+4. Ihre Empfehlungen und Prioritäten
 
-Provide a thoughtful, detailed analysis that reflects your role's expertise and concerns.
+Liefern Sie eine fundierte, detaillierte Analyse, die die Expertise und Perspektive Ihrer Rolle widerspiegelt.
 
-**IMPORTANT: At the end of your analysis, you MUST include:**
+**WICHTIG: Am Ende Ihrer Analyse MÜSSEN Sie Folgendes angeben:**
 
-## Confidence Assessment
-- **CONFIDENCE LEVEL:** [HIGH/MEDIUM/LOW]
-- **KEY UNCERTAINTIES:**
-  - [List 2-4 main unknowns or assumptions that affect your analysis]
+## Konfidenzeinschätzung
+- **KONFIDENZNIVEAU:** [HOCH/MITTEL/NIEDRIG]
+- **ZENTRALE UNSICHERHEITEN:**
+  - [Nennen Sie 2-4 wesentliche Unbekannte oder Annahmen, die Ihre Analyse beeinflussen]
 
-This helps the board understand where more information might be needed."""
+Dies hilft dem Vorstand zu verstehen, wo möglicherweise weitere Informationen benötigt werden."""
 
     # Query all executives in parallel
     responses = await query_executives_parallel(executives, executive_prompt)
@@ -108,17 +108,20 @@ def parse_confidence_assessment(text: str) -> Tuple[str, List[str]]:
     confidence = "MEDIUM"  # Default
     uncertainties = []
 
-    # Extract confidence level
+    # Extract confidence level (supports German and English)
     confidence_match = re.search(
-        r'\*?\*?CONFIDENCE\s*(?:LEVEL)?[:\s]*\*?\*?\s*(HIGH|MEDIUM|LOW)',
+        r'\*?\*?(?:CONFIDENCE\s*(?:LEVEL)?|KONFIDENZNIVEAU)[:\s]*\*?\*?\s*(HIGH|MEDIUM|LOW|HOCH|MITTEL|NIEDRIG)',
         text, re.IGNORECASE
     )
     if confidence_match:
-        confidence = confidence_match.group(1).upper()
+        level = confidence_match.group(1).upper()
+        # Normalize German to English for internal use
+        level_map = {"HOCH": "HIGH", "MITTEL": "MEDIUM", "NIEDRIG": "LOW"}
+        confidence = level_map.get(level, level)
 
-    # Extract uncertainties
+    # Extract uncertainties (supports German and English)
     uncertainties_section = re.search(
-        r'(?:KEY\s*)?UNCERTAINTIES[:\s]*\n?((?:[-•*]\s*.+\n?)+)',
+        r'(?:KEY\s*)?(?:UNCERTAINTIES|ZENTRALE\s*UNSICHERHEITEN)[:\s]*\n?((?:[-•*]\s*.+\n?)+)',
         text, re.IGNORECASE
     )
     if uncertainties_section:
@@ -174,38 +177,38 @@ async def stage2_cross_evaluation(
         for role_key, role_config in industry_executives.items()
     }
 
-    evaluation_prompt = f"""The Executive Board is discussing the following business situation:
+    evaluation_prompt = f"""Der Vorstand diskutiert die folgende Geschäftssituation:
 
 ---
 {user_query}
 ---
 
-Your fellow board members have provided their initial analyses:
+Ihre Vorstandskollegen haben ihre ersten Analysen vorgelegt:
 
 {perspectives_text}
 
-As a board member, please:
-1. Evaluate each perspective - what are the strengths and potential blind spots?
-2. Identify where you agree and disagree with other executives
-3. Highlight any critical points that may have been overlooked
-4. Consider how different perspectives complement or conflict with each other
-5. Note which executives expressed low confidence and whether their uncertainties are valid concerns
+Bitte als Vorstandsmitglied:
+1. Bewerten Sie jede Perspektive - was sind die Stärken und möglichen blinden Flecken?
+2. Identifizieren Sie, wo Sie mit anderen Vorständen übereinstimmen und wo nicht
+3. Heben Sie kritische Punkte hervor, die möglicherweise übersehen wurden
+4. Berücksichtigen Sie, wie sich verschiedene Perspektiven ergänzen oder widersprechen
+5. Beachten Sie, welche Vorstände geringe Konfidenz geäußert haben und ob deren Unsicherheiten berechtigte Bedenken sind
 
-**At the end, provide your RANKING in this exact JSON format:**
+**Geben Sie am Ende Ihr RANKING in diesem exakten JSON-Format an:**
 
 ```json
 {{
   "ranking": [
-    {{"perspective": "A", "rank": 1, "strength": "brief reason"}},
-    {{"perspective": "B", "rank": 2, "strength": "brief reason"}},
+    {{"perspective": "A", "rank": 1, "strength": "kurze Begründung"}},
+    {{"perspective": "B", "rank": 2, "strength": "kurze Begründung"}},
     ...
   ],
-  "key_agreements": ["point 1", "point 2"],
-  "key_disagreements": ["point 1", "point 2"]
+  "key_agreements": ["Punkt 1", "Punkt 2"],
+  "key_disagreements": ["Punkt 1", "Punkt 2"]
 }}
 ```
 
-Rank all perspectives from most valuable (1) to least valuable for this specific situation."""
+Ranken Sie alle Perspektiven von der wertvollsten (1) bis zur am wenigsten wertvollen für diese spezifische Situation."""
 
     # Query all executives in parallel for their evaluations
     responses = await query_executives_parallel(executives, evaluation_prompt)
@@ -346,26 +349,26 @@ async def stage2_5_debate(
             for c in critiques[:3]  # Limit to 3 critiques
         ])
 
-        debate_prompt = f"""In the Executive Board meeting about:
+        debate_prompt = f"""In der Vorstandssitzung zum Thema:
 
 ---
 {user_query}
 ---
 
-You provided this analysis:
+Sie haben folgende Analyse vorgelegt:
 {stage1_item['response'][:2000]}...
 
-Your colleagues have provided feedback on your perspective:
+Ihre Kollegen haben Feedback zu Ihrer Perspektive gegeben:
 
 {critiques_text}
 
-Please provide a brief response (200-400 words):
+Bitte geben Sie eine kurze Stellungnahme ab (200-400 Wörter):
 
-1. **Defend** - Which criticisms do you disagree with and why?
-2. **Acknowledge** - Which valid points do you accept?
-3. **Refine** - How would you modify your recommendation based on this feedback?
+1. **Verteidigung** - Welchen Kritikpunkten widersprechen Sie und warum?
+2. **Anerkennung** - Welche berechtigten Punkte akzeptieren Sie?
+3. **Verfeinerung** - Wie würden Sie Ihre Empfehlung auf Basis dieses Feedbacks anpassen?
 
-Be constructive and focused on improving the final decision."""
+Seien Sie konstruktiv und konzentrieren Sie sich auf die Verbesserung der endgültigen Entscheidung."""
 
         # Query this executive using industry-specific config
         executives = {
@@ -415,30 +418,30 @@ async def generate_risk_matrix(
         for r in stage1_results
     ])
 
-    risk_prompt = f"""Based on these executive board perspectives on the following situation:
+    risk_prompt = f"""Basierend auf diesen Vorstandsperspektiven zur folgenden Situation:
 
 ---
 {user_query}
 ---
 
-Perspectives:
+Perspektiven:
 {all_perspectives}
 
-Extract and structure ALL identified risks into a risk matrix. For EACH risk, provide:
+Extrahieren und strukturieren Sie ALLE identifizierten Risiken in einer Risikomatrix. Für JEDES Risiko geben Sie an:
 
-Respond ONLY with valid JSON in this exact format:
+Antworten Sie NUR mit gültigem JSON in diesem exakten Format:
 ```json
 {{
   "risks": [
     {{
       "id": "R1",
-      "description": "Brief risk description",
-      "category": "Financial|Operational|Strategic|Legal|Reputational|Technical",
+      "description": "Kurze Risikobeschreibung",
+      "category": "Finanziell|Operativ|Strategisch|Rechtlich|Reputation|Technisch",
       "likelihood": "unlikely|possible|likely|very_likely",
       "impact": "low|medium|high|critical",
       "owner": "{role_names}",
-      "mitigation": "Suggested mitigation strategy",
-      "source_executive": "Who identified this risk"
+      "mitigation": "Vorgeschlagene Gegenmaßnahme",
+      "source_executive": "Wer hat dieses Risiko identifiziert"
     }}
   ],
   "risk_summary": {{
@@ -447,12 +450,12 @@ Respond ONLY with valid JSON in this exact format:
     "high_count": 0,
     "medium_count": 0,
     "low_count": 0,
-    "top_risk_categories": ["category1", "category2"]
+    "top_risk_categories": ["Kategorie1", "Kategorie2"]
   }}
 }}
 ```
 
-Identify 6-12 distinct risks from the perspectives. Be specific and actionable."""
+Identifizieren Sie 6-12 verschiedene Risiken aus den Perspektiven. Seien Sie spezifisch und handlungsorientiert."""
 
     messages = [{"role": "user", "content": risk_prompt}]
     response = await query_model(COUNCIL_SPEAKER_MODEL, messages, timeout=60.0)
@@ -526,8 +529,8 @@ async def stage3_council_speaker_synthesis(
     # Add debate results if available
     debate_text = ""
     if debate_results:
-        debate_text = "\n\n**STAGE 2.5 - Debate Responses:**\n\n" + "\n\n".join([
-            f"**{result['title']} responds:**\n{result['response']}"
+        debate_text = "\n\n**PHASE 2.5 - Debattenantworten:**\n\n" + "\n\n".join([
+            f"**{result['title']} antwortet:**\n{result['response']}"
             for result in debate_results
         ])
 
@@ -536,28 +539,28 @@ async def stage3_council_speaker_synthesis(
     if risk_matrix and risk_matrix.get('risks'):
         high_risks = [r for r in risk_matrix['risks'] if r.get('risk_level') in ['critical', 'high']]
         if high_risks:
-            risk_text = "\n\n**RISK ANALYSIS - High Priority Risks:**\n"
+            risk_text = "\n\n**RISIKOANALYSE - Hochprioritäre Risiken:**\n"
             for risk in high_risks[:5]:
-                risk_text += f"\n- [{risk.get('risk_level', 'high').upper()}] {risk.get('description', 'Unknown')} (Owner: {risk.get('owner', 'TBD')})"
+                risk_text += f"\n- [{risk.get('risk_level', 'high').upper()}] {risk.get('description', 'Unbekannt')} (Verantwortlich: {risk.get('owner', 'Offen')})"
 
     speaker_prompt = f"""{speaker_persona}
 
 ---
 
-EXECUTIVE BOARD MEETING
+VORSTANDSSITZUNG
 
-**Business Situation Under Discussion:**
+**Geschäftssituation zur Diskussion:**
 {user_query}
 
 ---
 
-**STAGE 1 - Individual Executive Perspectives:**
+**PHASE 1 - Individuelle Vorstandsperspektiven:**
 
 {stage1_text}
 
 ---
 
-**STAGE 2 - Cross-Evaluations and Rankings:**
+**PHASE 2 - Gegenseitige Bewertungen und Rankings:**
 
 {stage2_text}
 {debate_text}
@@ -565,15 +568,15 @@ EXECUTIVE BOARD MEETING
 
 ---
 
-As the Council Speaker, please synthesize all perspectives, debates, and risk analysis into a comprehensive final recommendation for the board.
+Bitte synthetisieren Sie als Ratssprecher alle Perspektiven, Debatten und die Risikoanalyse zu einer umfassenden Schlussempfehlung für den Vorstand.
 
-Pay special attention to:
-1. Areas where executives expressed LOW confidence - these may need more investigation
-2. Points raised during the debate that refined initial positions
-3. High-priority risks that need mitigation
-4. The Devil's Advocate perspective if present - ensure concerns are addressed
+Achten Sie besonders auf:
+1. Bereiche, in denen Vorstände NIEDRIGE Konfidenz geäußert haben - hier sind möglicherweise weitere Informationen nötig
+2. Punkte, die in der Debatte herausgearbeitet und die ursprünglichen Positionen verfeinert haben
+3. Hochprioritäre Risiken, die Gegenmaßnahmen erfordern
+4. Die Perspektive des Advocatus Diaboli, falls vorhanden - stellen Sie sicher, dass die Bedenken adressiert werden
 
-Follow the structure outlined in your role description."""
+Folgen Sie der Struktur, die in Ihrer Rollenbeschreibung vorgegeben ist."""
 
     messages = [{"role": "user", "content": speaker_prompt}]
 
@@ -583,7 +586,7 @@ Follow the structure outlined in your role description."""
     if response is None:
         return {
             "model": COUNCIL_SPEAKER_MODEL,
-            "response": "Error: Unable to generate final synthesis. The Council Speaker was unable to provide a response."
+            "response": "Fehler: Die abschließende Synthese konnte nicht erstellt werden. Der Ratssprecher konnte keine Antwort generieren."
         }
 
     return {
@@ -650,13 +653,13 @@ async def generate_meeting_title(user_query: str) -> str:
     Returns:
         A short title (3-7 words)
     """
-    title_prompt = f"""Generate a very short title (3-7 words maximum) that summarizes this executive board meeting topic.
-The title should be concise and professional, like a board meeting agenda item.
-Do not use quotes or punctuation in the title.
+    title_prompt = f"""Erstellen Sie einen sehr kurzen Titel (3-7 Wörter maximal) für dieses Vorstandssitzungsthema.
+Der Titel soll prägnant und professionell sein, wie ein Tagesordnungspunkt.
+Verwenden Sie keine Anführungszeichen oder Satzzeichen im Titel. Antworten Sie auf Deutsch.
 
-Topic: {user_query}
+Thema: {user_query}
 
-Title:"""
+Titel:"""
 
     messages = [{"role": "user", "content": title_prompt}]
 
@@ -664,9 +667,9 @@ Title:"""
     response = await query_model("google/gemini-2.0-flash-001", messages, timeout=30.0)
 
     if response is None:
-        return "Executive Board Meeting"
+        return "Vorstandssitzung"
 
-    title = response.get('content', 'Executive Board Meeting').strip()
+    title = response.get('content', 'Vorstandssitzung').strip()
     title = title.strip('"\'')
 
     if len(title) > 60:
@@ -704,7 +707,7 @@ async def run_executive_board_meeting(
     if not stage1_results:
         return [], [], {
             "model": "error",
-            "response": "All executive board members failed to respond. Please try again."
+            "response": "Alle Vorstandsmitglieder konnten keine Antwort liefern. Bitte versuchen Sie es erneut."
         }, {}, None, None
 
     # Stage 2: Cross-evaluations
@@ -803,28 +806,28 @@ async def compare_scenarios(
         })
 
     # Generate comparison synthesis
-    comparison_prompt = f"""As the Council Speaker, compare these {len(scenarios)} scenarios that the board has analyzed:
+    comparison_prompt = f"""Vergleichen Sie als Ratssprecher diese {len(scenarios)} Szenarien, die der Vorstand analysiert hat:
 
 """
     for i, result in enumerate(scenario_results):
         comparison_prompt += f"""
-**SCENARIO {i + 1}:** {result['scenario']}
-**Final Recommendation:** {result['stage3'].get('response', 'N/A')[:500]}...
+**SZENARIO {i + 1}:** {result['scenario']}
+**Schlussempfehlung:** {result['stage3'].get('response', 'k.A.')[:500]}...
 """
 
     comparison_prompt += """
 
-Please provide:
-1. **Side-by-Side Comparison** - Key differences in recommendations
-2. **Risk Comparison** - Which scenario has lower overall risk?
-3. **Resource Requirements** - Which requires more resources/investment?
-4. **Recommended Choice** - Which scenario does the board recommend and why?
-5. **Conditions for Alternative** - Under what conditions should the other option(s) be reconsidered?"""
+Bitte liefern Sie:
+1. **Gegenüberstellung** - Wesentliche Unterschiede in den Empfehlungen
+2. **Risikovergleich** - Welches Szenario hat ein geringeres Gesamtrisiko?
+3. **Ressourcenbedarf** - Welches erfordert mehr Ressourcen/Investitionen?
+4. **Empfohlene Wahl** - Welches Szenario empfiehlt der Vorstand und warum?
+5. **Bedingungen für Alternativen** - Unter welchen Umständen sollte(n) die andere(n) Option(en) erneut geprüft werden?"""
 
     messages = [{"role": "user", "content": comparison_prompt}]
     comparison_response = await query_model(COUNCIL_SPEAKER_MODEL, messages)
 
     return {
         "scenarios": scenario_results,
-        "comparison": comparison_response.get('content', '') if comparison_response else "Unable to generate comparison"
+        "comparison": comparison_response.get('content', '') if comparison_response else "Vergleich konnte nicht erstellt werden"
     }

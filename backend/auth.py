@@ -180,7 +180,7 @@ async def register_user(email: str, password: str) -> AuthResponse:
     if not client:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Authentication service not configured"
+            detail="Authentifizierungsdienst nicht konfiguriert"
         )
 
     try:
@@ -192,7 +192,7 @@ async def register_user(email: str, password: str) -> AuthResponse:
         if response.user is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Registration failed. Please try again."
+                detail="Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
             )
 
         # Note: Supabase may require email verification depending on settings
@@ -221,11 +221,11 @@ async def register_user(email: str, password: str) -> AuthResponse:
         if "already registered" in error_msg.lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered"
+                detail="E-Mail bereits registriert"
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Registration failed: {error_msg}"
+            detail=f"Registrierung fehlgeschlagen: {error_msg}"
         )
 
 
@@ -247,7 +247,7 @@ async def login_user(email: str, password: str) -> AuthResponse:
     if not client:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Authentication service not configured"
+            detail="Authentifizierungsdienst nicht konfiguriert"
         )
 
     try:
@@ -259,7 +259,7 @@ async def login_user(email: str, password: str) -> AuthResponse:
         if response.user is None or response.session is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password"
+                detail="Ungültige E-Mail oder Passwort"
             )
 
         # Get user tier from metadata (default to free)
@@ -281,7 +281,7 @@ async def login_user(email: str, password: str) -> AuthResponse:
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
+            detail="Ungültige E-Mail oder Passwort"
         )
 
 
@@ -358,7 +358,7 @@ async def require_auth(
     if not token_payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
+            detail="Ungültiges oder abgelaufenes Token",
             headers={"WWW-Authenticate": "Bearer"}
         )
 

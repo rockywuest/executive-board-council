@@ -34,7 +34,6 @@ import {
   FlaskConical,
   Truck,
   HardHat,
-  Globe,
   LogIn,
   LogOut,
   User,
@@ -152,109 +151,19 @@ const TRANSLATIONS = {
     tierFree: 'Kostenlos',
     tierPro: 'Pro',
     tierEnterprise: 'Enterprise',
+
+    // Error messages
+    failedCreateMeeting: 'Besprechung konnte nicht erstellt werden',
+    failedLoadMeeting: 'Besprechung konnte nicht geladen werden',
+    confirmDeleteMeeting: 'Diese Besprechung wirklich löschen?',
+    failedDeleteMeeting: 'Besprechung konnte nicht gelöscht werden',
+    copiedToClipboard: 'In Zwischenablage kopiert!',
+    failedExportMeeting: 'Besprechung konnte nicht exportiert werden',
+    failedSubmit: 'Absenden fehlgeschlagen',
+    removeFile: 'Entfernen',
   },
-  en: {
-    // Header
-    appTitle: 'Executive Board Council',
-    appSubtitle: 'Decision Support for German Companies',
-    changeIndustry: 'Change Industry',
-    history: 'History',
-    export: 'Export',
-
-    // Industry Selector
-    selectIndustry: 'Select Your Industry',
-    selectIndustryDesc: 'Select your industry to customize the executive board composition and scenarios',
-    loadingIndustries: 'Loading industries...',
-
-    // Main Input
-    presentSituation: 'Present a Business Situation',
-    templates: 'Templates',
-    situationPlaceholder: 'Describe the business situation, challenge, or decision you need guidance on...\n\nExample: We are considering expanding our production capacity by building a new factory in Eastern Europe. What factors should we consider?',
-    dragDropFiles: 'Drag & drop documents here, or click to select',
-    fileTypes: 'PDF, DOC, DOCX, TXT, CSV, XLS, XLSX (max 5MB each)',
-    includeDebate: 'Include Debate Stage',
-    generateRiskMatrix: 'Generate Risk Matrix',
-    consultingBoard: 'Consulting the Board...',
-    conveneBoard: 'Convene Executive Board',
-
-    // Stages
-    stagePerspectives: 'Perspectives',
-    stageEvaluation: 'Evaluation',
-    stageDebate: 'Debate',
-    stageRiskAnalysis: 'Risk Analysis',
-    stageSynthesis: 'Synthesis',
-
-    // Results
-    expandAll: 'Expand All',
-    collapseAll: 'Collapse All',
-    copySynthesis: 'Copy Synthesis',
-    stage1Title: 'Stage 1: Executive Perspectives',
-    stage2Title: 'Stage 2: Cross-Evaluations',
-    stage2_5Title: 'Stage 2.5: Debate Responses',
-    stage3Title: "Stage 3: Council Speaker's Recommendation",
-    aggregateRankings: 'Aggregate Rankings',
-    keyUncertainties: 'Key Uncertainties',
-    evaluationBy: 'Evaluation by',
-    responds: 'responds',
-    debateResponse: 'Debate Response',
-
-    // Risk Matrix
-    riskMatrix: 'Risk Matrix',
-    risk: 'Risk',
-    category: 'Category',
-    level: 'Level',
-    owner: 'Owner',
-    mitigation: 'Mitigation',
-
-    // Meeting History
-    meetingHistory: 'Meeting History',
-    noPreviousMeetings: 'No previous meetings',
-    discussions: 'discussion(s)',
-    deleteMeeting: 'Delete meeting',
-
-    // Footer
-    footerVersion: 'Executive Board Council v3.0 - Powered by Multiple LLMs via OpenRouter',
-    footerFeatures: 'Features: Industry Selection • Devil\'s Advocate • Debate Stage • Risk Matrix • Confidence Scores',
-
-    // Misc
-    all: 'All',
-    avg: 'Avg',
-
-    // Auth
-    login: 'Sign In',
-    logout: 'Sign Out',
-    register: 'Register',
-    email: 'Email',
-    password: 'Password',
-    loginTitle: 'Sign In',
-    registerTitle: 'Create Account',
-    noAccount: "Don't have an account?",
-    hasAccount: 'Already have an account?',
-    loginError: 'Login failed. Please check your credentials.',
-    registerError: 'Registration failed. Please try again.',
-    registerSuccess: 'Registration successful! Please check your email to confirm.',
-
-    // Usage & Tiers
-    usage: 'Usage',
-    remaining: 'Remaining',
-    requestsRemaining: 'requests remaining',
-    requestsToday: 'Today',
-    requestsMonth: 'This month',
-    unlimited: 'Unlimited',
-    upgrade: 'Upgrade',
-    upgradeToPro: 'Upgrade to Pro',
-    limitReached: 'Limit Reached',
-    limitReachedTitle: 'Request Limit Reached',
-    limitReachedAnon: 'You have reached your daily limit of 2 free requests. Create a free account for 5 requests per month, or upgrade to Pro for 50 requests.',
-    limitReachedFree: 'You have reached your monthly limit of 5 requests. Upgrade to Pro for 50 requests per month.',
-    createAccount: 'Create Free Account',
-    tier: 'Plan',
-    tierAnonymous: 'Anonymous',
-    tierFree: 'Free',
-    tierPro: 'Pro',
-    tierEnterprise: 'Enterprise',
-  }
 }
+const t = TRANSLATIONS.de
 
 // Default executive info (manufacturing) - will be replaced by dynamic data
 const DEFAULT_EXECUTIVE_INFO = {
@@ -538,7 +447,7 @@ function FileUploadZone({ files, setFiles, t }) {
               <button
                 onClick={() => removeFile(index)}
                 className="remove-file"
-                aria-label={`Remove ${file.name}`}
+                aria-label={`${t.removeFile}: ${file.name}`}
                 type="button"
               >
                 <X size={14} aria-hidden="true" />
@@ -892,7 +801,7 @@ function UsageBadge({ usage, user, t, onClick }) {
   )
 }
 
-function IndustrySelector({ industries, onSelect, isLoading, t, lang }) {
+function IndustrySelector({ industries, onSelect, isLoading, t }) {
   if (isLoading) {
     return (
       <div className="industry-selector">
@@ -924,8 +833,8 @@ function IndustrySelector({ industries, onSelect, isLoading, t, lang }) {
               <div className="industry-icon">
                 <IconComponent size={32} />
               </div>
-              <h3>{lang === 'de' ? industry.german_context : industry.name}</h3>
-              <p className="industry-german">{lang === 'de' ? industry.name : industry.german_context}</p>
+              <h3>{industry.german_context}</h3>
+              <p className="industry-german">{industry.name}</p>
               <p className="industry-description">{industry.description}</p>
             </button>
           )
@@ -936,19 +845,6 @@ function IndustrySelector({ industries, onSelect, isLoading, t, lang }) {
 }
 
 function App() {
-  // Language state - German is default, persisted in localStorage
-  const [lang, setLang] = useState(() => {
-    const saved = localStorage.getItem('language')
-    return saved || 'de'
-  })
-  const t = TRANSLATIONS[lang]
-
-  const toggleLanguage = () => {
-    const newLang = lang === 'de' ? 'en' : 'de'
-    setLang(newLang)
-    localStorage.setItem('language', newLang)
-  }
-
   // Auth state
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user')
@@ -1148,7 +1044,7 @@ function App() {
       setCurrentMeeting(data)
       return data.id
     } catch (err) {
-      setError('Failed to create meeting')
+      setError(t.failedCreateMeeting)
       return null
     }
   }
@@ -1175,12 +1071,12 @@ function App() {
       }
       setShowHistory(false)
     } catch (err) {
-      setError('Failed to load meeting')
+      setError(t.failedLoadMeeting)
     }
   }
 
   const deleteMeeting = async (meetingId) => {
-    if (!confirm('Delete this meeting?')) return
+    if (!confirm(t.confirmDeleteMeeting)) return
 
     try {
       await fetch(`${API_URL}/api/meetings/${meetingId}`, { method: 'DELETE' })
@@ -1190,7 +1086,7 @@ function App() {
         setResults(null)
       }
     } catch (err) {
-      setError('Failed to delete meeting')
+      setError(t.failedDeleteMeeting)
     }
   }
 
@@ -1222,7 +1118,7 @@ function App() {
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text)
-      alert('Copied to clipboard!')
+      alert(t.copiedToClipboard)
     } catch (err) {
       console.error('Failed to copy:', err)
     }
@@ -1253,7 +1149,7 @@ function App() {
         URL.revokeObjectURL(url)
       }
     } catch (err) {
-      setError('Failed to export meeting')
+      setError(t.failedExportMeeting)
     }
   }
 
@@ -1399,7 +1295,7 @@ function App() {
         }
       }
     } catch (err) {
-      setError(`Failed to submit: ${err.message}`)
+      setError(`${t.failedSubmit}: ${err.message}`)
     } finally {
       setIsLoading(false)
       setCurrentStage(-1)
@@ -1412,18 +1308,11 @@ function App() {
   if (!selectedIndustry) {
     return (
       <div className="app industry-select-mode">
-        <div className="language-toggle-floating">
-          <button onClick={toggleLanguage} className="lang-btn" type="button">
-            <Globe size={18} />
-            <span>{lang === 'de' ? 'EN' : 'DE'}</span>
-          </button>
-        </div>
         <IndustrySelector
           industries={industries}
           onSelect={handleIndustrySelect}
           isLoading={industriesLoading}
           t={t}
-          lang={lang}
         />
       </div>
     )
@@ -1438,7 +1327,7 @@ function App() {
           <IndustryIcon size={32} aria-hidden="true" />
           <div>
             <h1>{t.appTitle}</h1>
-            <p>{lang === 'de' ? selectedIndustry.german_context : selectedIndustry.name}</p>
+            <p>{selectedIndustry.german_context}</p>
           </div>
         </div>
         <div className="header-actions">
@@ -1473,15 +1362,6 @@ function App() {
             </button>
           )}
 
-          <button
-            onClick={toggleLanguage}
-            className="header-btn lang-toggle-btn"
-            type="button"
-            aria-label="Toggle language"
-          >
-            <Globe size={20} />
-            <span className="btn-label">{lang === 'de' ? 'EN' : 'DE'}</span>
-          </button>
           <button
             onClick={changeIndustry}
             className="header-btn change-industry-btn"
