@@ -3377,56 +3377,56 @@ Sollten wir diese Kontraktlogistik-Chance verfolgen?"""
             },
             {
                 "id": "network_consolidation",
-                "name": "Network Optimization",
-                "category": "Operations",
-                "description": "Optimize hub and spoke network",
-                "prompt": """Our network is inefficient:
+                "name": "Netzwerkoptimierung",
+                "category": "Betrieb",
+                "description": "Hub-and-Spoke-Netzwerk optimieren",
+                "prompt": """Unser Netzwerk ist ineffizient:
 
-Current network:
-- 15 hubs, 50 depots
-- Average truck utilization: 65%
-- Cross-dock efficiency: 85%
-- Historical organic growth pattern
+Aktuelles Netzwerk:
+- 15 Hubs, 50 Depots
+- Durchschnittliche Lkw-Auslastung: 65%
+- Cross-Dock-Effizienz: 85%
+- Historisch organisch gewachsen
 
-Analysis shows:
-- 4 hubs are redundant
-- 12 depots can be consolidated
-- Potential savings: €30M annually
-- Service improvement possible
+Analyse zeigt:
+- 4 Hubs sind redundant
+- 12 Depots können konsolidiert werden
+- Einsparpotenzial: 30 Mio. € jährlich
+- Serviceverbesserung möglich
 
-Challenges:
-- 800 employees in affected locations
-- Customer concerns about service
-- Works council resistance
-- Transition period risks
+Herausforderungen:
+- 800 Mitarbeiter an betroffenen Standorten
+- Kundenbedenken bezüglich Service
+- Widerstand des Betriebsrats
+- Risiken in der Übergangsphase
 
-How should we approach network optimization?"""
+Wie sollten wir die Netzwerkoptimierung angehen?"""
             },
             {
                 "id": "rail_modal_shift",
-                "name": "Modal Shift to Rail",
-                "category": "Sustainability",
-                "description": "Shift freight from road to rail",
-                "prompt": """Customers want rail freight solutions:
+                "name": "Verlagerung auf die Schiene",
+                "category": "Nachhaltigkeit",
+                "description": "Güterverkehr von der Straße auf die Schiene verlagern",
+                "prompt": """Kunden wollen Schienengüterverkehrslösungen:
 
-Opportunity:
-- Rail is 70% lower CO2 than road
-- Government subsidies available
-- 30% of our volume is rail-suitable
+Chance:
+- Schiene hat 70% weniger CO2 als Straße
+- Staatliche Förderungen verfügbar
+- 30% unseres Volumens ist schienengeeignet
 
-Challenges:
-- DB Cargo reliability issues
-- Last-mile still needs trucks
-- Lead times longer than road
-- Capacity constraints on rail network
+Herausforderungen:
+- Zuverlässigkeitsprobleme bei DB Cargo
+- Letzte Meile braucht weiterhin Lkw
+- Längere Laufzeiten als Straßentransport
+- Kapazitätsengpässe im Schienennetz
 
-Investment options:
-A) Build rail terminals at major hubs (€50M)
-B) Partnership with private rail operators
-C) Intermodal containers investment (€20M)
-D) Maintain road focus, buy carbon offsets
+Investitionsoptionen:
+A) Bahnhofterminals an großen Hubs bauen (50 Mio. €)
+B) Partnerschaft mit privaten Bahnbetreibern
+C) Investition in intermodale Container (20 Mio. €)
+D) Fokus auf Straßentransport beibehalten, CO2-Kompensation kaufen
 
-What should our rail strategy be?"""
+Wie sollte unsere Schienenstrategie aussehen?"""
             }
         ]
     },
@@ -3436,391 +3436,405 @@ What should our rail strategy be?"""
     # =========================================================================
     "construction": {
         "id": "construction",
-        "name": "Construction & Real Estate",
+        "name": "Bau & Immobilien",
         "icon": "building-2",
-        "description": "Construction companies, real estate development, building materials",
+        "description": "Bauunternehmen, Immobilienentwicklung, Baustoffe",
         "german_context": "Bau- und Immobilienwirtschaft",
         "executive_roles": {
             "CEO": {
                 "title": "Chief Executive Officer (Vorstandsvorsitzender)",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """You are the CEO of a German construction/real estate company.
+                "persona": """Sie sind der Vorstandsvorsitzende (CEO) eines deutschen Bau-/Immobilienunternehmens.
 
-Your responsibilities:
-- Corporate strategy
-- Major project decisions
-- Client relationships
-- Risk management
-- Market positioning
+Ihre Verantwortlichkeiten:
+- Unternehmensstrategie
+- Entscheidungen bei Großprojekten
+- Kundenbeziehungen
+- Risikomanagement
+- Marktpositionierung
 
-Your decision-making style:
-- Project-focused
-- Risk-aware
-- Client relationship oriented
-- Long-term value creation
+Ihr Entscheidungsstil:
+- Projektorientiert
+- Risikobewusst
+- Kundenbeziehungsorientiert
+- Langfristige Wertschöpfung
 
-When analyzing situations, consider:
-- Project viability
-- Market conditions
-- Client relationships
-- Risk exposure"""
+Bei der Analyse von Situationen berücksichtigen Sie:
+- Projektfähigkeit
+- Marktbedingungen
+- Kundenbeziehungen
+- Risikoexposition
+
+Antworten Sie stets auf Deutsch."""
             },
             "CFO": {
                 "title": "Chief Financial Officer (Finanzvorstand)",
                 "model": EXECUTIVE_MODELS["analytical"],
-                "persona": """You are the CFO of a German construction company.
+                "persona": """Sie sind der Finanzvorstand (CFO) eines deutschen Bauunternehmens.
 
-Your responsibilities:
-- Project financing
-- Cash flow management
-- Working capital
-- Banking relationships
-- Financial risk management
+Ihre Verantwortlichkeiten:
+- Projektfinanzierung
+- Cashflow-Management
+- Working Capital
+- Bankbeziehungen
+- Finanzielles Risikomanagement
 
-Your decision-making style:
-- Cash flow focus
-- Conservative financing
-- Project profitability
+Ihr Entscheidungsstil:
+- Cashflow-Fokus
+- Konservative Finanzierung
+- Projektprofitabilität
 
-When analyzing situations, consider:
-- Project cash flows
-- Working capital impact
-- Financing implications
-- Guarantee requirements"""
+Bei der Analyse von Situationen berücksichtigen Sie:
+- Projekt-Cashflows
+- Working-Capital-Auswirkungen
+- Finanzierungsimplikationen
+- Bürgschaftsanforderungen
+
+Antworten Sie stets auf Deutsch."""
             },
             "CPO": {
                 "title": "Chief Project Officer (Projektvorstand)",
                 "model": EXECUTIVE_MODELS["technical"],
-                "persona": """You are the CPO of a German construction company.
+                "persona": """Sie sind der Projektvorstand (CPO) eines deutschen Bauunternehmens.
 
-Your responsibilities:
-- Project portfolio management
-- Execution excellence
-- Resource allocation
-- Schedule management
-- Subcontractor management
+Ihre Verantwortlichkeiten:
+- Projektportfolio-Management
+- Ausführungsexzellenz
+- Ressourcenallokation
+- Terminmanagement
+- Nachunternehmermanagement
 
-Your decision-making style:
-- Execution focused
-- Risk management
-- Resource optimization
+Ihr Entscheidungsstil:
+- Ausführungsorientiert
+- Risikomanagement
+- Ressourcenoptimierung
 
-When analyzing situations, consider:
-- Project execution impact
-- Resource availability
-- Schedule implications
-- Subcontractor capacity"""
+Bei der Analyse von Situationen berücksichtigen Sie:
+- Auswirkungen auf die Projektausführung
+- Ressourcenverfügbarkeit
+- Terminliche Implikationen
+- Nachunternehmerkapazität
+
+Antworten Sie stets auf Deutsch."""
             },
             "CTO": {
                 "title": "Chief Technology Officer (Technischer Vorstand)",
                 "model": EXECUTIVE_MODELS["technical"],
-                "persona": """You are the CTO of a German construction company.
+                "persona": """Sie sind der Technische Vorstand (CTO) eines deutschen Bauunternehmens.
 
-Your responsibilities:
-- Construction technology
-- BIM and digitalization
-- Modular construction
-- Sustainability building
-- Equipment and methods
+Ihre Verantwortlichkeiten:
+- Bautechnologie
+- BIM und Digitalisierung
+- Modulares Bauen
+- Nachhaltiges Bauen
+- Geräte und Verfahren
 
-Your decision-making style:
-- Innovation for efficiency
-- Practical technology
-- Sustainability focus
+Ihr Entscheidungsstil:
+- Innovation für Effizienz
+- Praxisnahe Technologie
+- Nachhaltigkeitsfokus
 
-When analyzing situations, consider:
-- Technical feasibility
-- Construction methods
-- Technology enablement
-- Sustainability requirements"""
+Bei der Analyse von Situationen berücksichtigen Sie:
+- Technische Machbarkeit
+- Bauverfahren
+- Technologieeinsatz
+- Nachhaltigkeitsanforderungen
+
+Antworten Sie stets auf Deutsch."""
             },
             "CLO": {
                 "title": "Chief Legal Officer (Rechtsvorstand)",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """You are the CLO of a German construction company.
+                "persona": """Sie sind der Rechtsvorstand (CLO) eines deutschen Bauunternehmens.
 
-Your responsibilities:
-- Contract management
-- Claims and disputes
-- Regulatory compliance
-- Building permits
-- Risk allocation
+Ihre Verantwortlichkeiten:
+- Vertragsmanagement
+- Nachträge und Streitfälle
+- Regulatorische Compliance
+- Baugenehmigungen
+- Risikoverteilung
 
-Your decision-making style:
-- Contract clarity
-- Risk mitigation
-- Dispute avoidance
+Ihr Entscheidungsstil:
+- Vertragsklarheit
+- Risikominimierung
+- Streitvermeidung
 
-When analyzing situations, consider:
-- Contract implications
-- Legal risks
-- Regulatory requirements
-- Claims exposure"""
+Bei der Analyse von Situationen berücksichtigen Sie:
+- Vertragliche Implikationen
+- Rechtliche Risiken
+- Regulatorische Anforderungen
+- Nachtragsexposition
+
+Antworten Sie stets auf Deutsch."""
             },
             "CHRO": {
                 "title": "Chief Human Resources Officer (Personalvorstand)",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """You are the CHRO of a German construction company.
+                "persona": """Sie sind der Personalvorstand (CHRO) eines deutschen Bauunternehmens.
 
-Your responsibilities:
-- Skilled trades recruitment
-- Safety culture
-- Training and development
-- Union relations (IG BAU)
-- Project staffing
+Ihre Verantwortlichkeiten:
+- Rekrutierung von Fachkräften
+- Sicherheitskultur
+- Aus- und Weiterbildung
+- Gewerkschaftsbeziehungen (IG BAU)
+- Projektbesetzung
 
-Your decision-making style:
-- Safety first
-- Skills development
-- Fair conditions
+Ihr Entscheidungsstil:
+- Sicherheit zuerst
+- Kompetenzentwicklung
+- Faire Bedingungen
 
-When analyzing situations, consider:
-- Safety implications
-- Workforce availability
-- Skills requirements
-- Union considerations"""
+Bei der Analyse von Situationen berücksichtigen Sie:
+- Sicherheitsimplikationen
+- Verfügbarkeit von Arbeitskräften
+- Qualifikationsanforderungen
+- Gewerkschaftliche Erwägungen
+
+Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
                 "title": "Devil's Advocate (Advocatus Diaboli)",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """You are the Devil's Advocate on the executive board of a German construction company.
+                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Bauunternehmens.
 
-Your unique role:
-- Challenge project assumptions
-- Question cost estimates
-- Identify execution risks
-- Stress-test schedules
-- Consider market cycle risks
+Ihre besondere Rolle:
+- Projektannahmen hinterfragen
+- Kostenschätzungen in Frage stellen
+- Ausführungsrisiken identifizieren
+- Terminpläne einem Stresstest unterziehen
+- Marktzyklenrisiken berücksichtigen
 
-When analyzing situations, consider:
-- What if costs overrun?
-- What if schedule slips?
-- What about subcontractor risks?
-- Market downturn impact?
-- Hidden project risks?"""
+Bei der Analyse von Situationen berücksichtigen Sie:
+- Was wenn die Kosten explodieren?
+- Was wenn der Zeitplan rutscht?
+- Wie steht es um Nachunternehmerrisiken?
+- Auswirkungen eines Marktabschwungs?
+- Versteckte Projektrisiken?
+
+Antworten Sie stets auf Deutsch."""
             }
         },
         "templates": [
             {
                 "id": "major_project_bid",
-                "name": "Major Project Bid Decision",
-                "category": "Strategy",
-                "description": "Evaluate large project opportunity",
-                "prompt": """We're considering bidding on a major project:
+                "name": "Angebotsentscheidung Großprojekt",
+                "category": "Strategie",
+                "description": "Bewertung einer großen Projektchance",
+                "prompt": """Wir erwägen ein Angebot für ein Großprojekt:
 
-Project:
-- New hospital complex
-- Contract value: €500M
-- Duration: 4 years
-- Fixed-price contract
-- Performance guarantees: 10%
+Projekt:
+- Neuer Krankenhauskomplex
+- Auftragswert: 500 Mio. €
+- Laufzeit: 4 Jahre
+- Pauschalpreisvertrag
+- Vertragserfüllungsbürgschaft: 10%
 
-Our assessment:
-- Estimated cost: €450M (10% margin)
-- Resource availability: 60% internal, 40% subcontract
-- Similar project experience: Limited
-- Competition: 5 other bidders
+Unsere Einschätzung:
+- Geschätzte Kosten: 450 Mio. € (10% Marge)
+- Ressourcenverfügbarkeit: 60% intern, 40% Nachunternehmer
+- Erfahrung mit ähnlichen Projekten: Begrenzt
+- Wettbewerb: 5 weitere Bieter
 
-Risks:
-- Material cost volatility
-- Labor shortage in region
-- Complex MEP requirements
-- Liquidated damages: €50K/day delay
+Risiken:
+- Materialkostenvolatilität
+- Fachkräftemangel in der Region
+- Komplexe TGA-Anforderungen
+- Vertragsstrafe: 50.000 €/Tag Verzug
 
-Should we bid on this project?"""
+Sollten wir für dieses Projekt bieten?"""
             },
             {
                 "id": "modular_construction",
-                "name": "Modular Construction Investment",
-                "category": "Technology",
-                "description": "Invest in offsite construction",
-                "prompt": """Modular construction could transform our business:
+                "name": "Investition in modulares Bauen",
+                "category": "Technologie",
+                "description": "Investition in Offsite-Fertigung",
+                "prompt": """Modulares Bauen könnte unser Geschäft transformieren:
 
-Opportunity:
-- Factory-built modules for residential
-- 30% faster construction
-- Better quality control
-- Weather-independent production
+Chance:
+- Werkseitig gefertigte Module für den Wohnungsbau
+- 30% schnellere Bauzeit
+- Bessere Qualitätskontrolle
+- Wetterunabhängige Produktion
 
-Investment required:
-- Factory facility: €50M
-- Equipment: €30M
-- Working capital: €20M
-- Breakeven: Year 3
+Erforderliche Investition:
+- Fertigungsanlage: 50 Mio. €
+- Ausrüstung: 30 Mio. €
+- Betriebskapital: 20 Mio. €
+- Break-even: Jahr 3
 
-Challenges:
-- Transport size limitations
-- Customer acceptance uncertain
-- Design standardization required
-- Initial projects at risk
+Herausforderungen:
+- Transportmaßbeschränkungen
+- Kundenakzeptanz ungewiss
+- Designstandardisierung erforderlich
+- Anfangsprojekte mit erhöhtem Risiko
 
-Should we invest in modular construction?"""
+Sollten wir in modulares Bauen investieren?"""
             },
             {
                 "id": "real_estate_development",
-                "name": "Development Project Decision",
-                "category": "Strategy",
-                "description": "Own development vs. contracting",
-                "prompt": """We have opportunity for own development:
+                "name": "Entscheidung Projektentwicklung",
+                "category": "Strategie",
+                "description": "Eigene Projektentwicklung vs. Bauauftrag",
+                "prompt": """Wir haben die Möglichkeit einer eigenen Projektentwicklung:
 
-Project:
-- Inner-city mixed-use development
-- Land cost: €30M
-- Construction cost: €80M
-- Selling price estimate: €150M
-- Duration: 3 years
+Projekt:
+- Innerstädtische Mischnutzungsentwicklung
+- Grundstückskosten: 30 Mio. €
+- Baukosten: 80 Mio. €
+- Geschätzter Verkaufspreis: 150 Mio. €
+- Laufzeit: 3 Jahre
 
-Our experience:
-- Construction contractor typically
-- No development team in-house
-- Limited sales/marketing capability
+Unsere Erfahrung:
+- Typischerweise als Bauunternehmer tätig
+- Kein eigenes Projektentwicklungsteam
+- Begrenzte Vertriebs-/Marketingfähigkeiten
 
-Options:
-A) Full development on own account
-B) Joint venture with developer (50/50)
-C) Construction contract only (guaranteed margin)
-D) Pass on opportunity
+Optionen:
+A) Vollständige Entwicklung auf eigene Rechnung
+B) Joint Venture mit Projektentwickler (50/50)
+C) Nur Bauauftrag (garantierte Marge)
+D) Chance nicht wahrnehmen
 
-Market risk: Interest rates rising, demand uncertain
+Marktrisiko: Steigende Zinsen, unsichere Nachfrage
 
-Should we pursue own development?"""
+Sollten wir eine eigene Projektentwicklung verfolgen?"""
             },
             {
                 "id": "sustainability_construction",
-                "name": "Sustainable Construction",
+                "name": "Nachhaltiges Bauen",
                 "category": "ESG",
-                "description": "Green building capabilities",
-                "prompt": """Sustainable construction is mandatory:
+                "description": "Kompetenzen für Green Building",
+                "prompt": """Nachhaltiges Bauen wird zur Pflicht:
 
-Market pressure:
-- Public projects require sustainability certification
-- ESG requirements from corporate clients
-- CO2 pricing for construction materials
-- Circular economy requirements coming
+Marktdruck:
+- Öffentliche Projekte erfordern Nachhaltigkeitszertifizierung
+- ESG-Anforderungen von Unternehmenskunden
+- CO2-Bepreisung für Baumaterialien
+- Kreislaufwirtschaftsanforderungen kommen
 
-Capability gaps:
-- Sustainability expertise limited
-- No LCA calculation ability
-- Sustainable material sourcing undeveloped
-- Net-zero construction unknown
+Kompetenzlücken:
+- Nachhaltigkeitsexpertise begrenzt
+- Keine Fähigkeit zur Ökobilanzierung (LCA)
+- Nachhaltige Materialbeschaffung unterentwickelt
+- Klimaneutrales Bauen unbekannt
 
-Investment options:
-A) Hire sustainability team (€5M/year)
-B) Partnership with sustainability consultancy
-C) Acquire specialized sustainable builder
-D) Training program for existing staff
+Investitionsoptionen:
+A) Nachhaltigkeitsteam einstellen (5 Mio. €/Jahr)
+B) Partnerschaft mit Nachhaltigkeitsberatung
+C) Spezialisierten nachhaltigen Bauunternehmer akquirieren
+D) Weiterbildungsprogramm für bestehendes Personal
 
-What should our sustainability strategy be?"""
+Was sollte unsere Nachhaltigkeitsstrategie sein?"""
             },
             {
                 "id": "subcontractor_insolvency",
-                "name": "Subcontractor Insolvency",
-                "category": "Risk",
-                "description": "Major subcontractor failure",
-                "prompt": """Our key subcontractor just filed for insolvency:
+                "name": "Insolvenz eines Nachunternehmers",
+                "category": "Risiko",
+                "description": "Ausfall eines wichtigen Nachunternehmers",
+                "prompt": """Unser wichtigster Nachunternehmer hat gerade Insolvenz angemeldet:
 
-Impact:
-- 5 active projects affected
-- Work in progress: €20M
-- Retention held: €3M
-- Replacement will cost 20% more
-- Schedule delays expected: 2-3 months
+Auswirkungen:
+- 5 aktive Projekte betroffen
+- Laufende Arbeiten: 20 Mio. €
+- Einbehalt: 3 Mio. €
+- Ersatz wird 20% teurer
+- Terminverzögerungen erwartet: 2-3 Monate
 
-Immediate needs:
-- Secure sites and materials
-- Find replacement subcontractors
-- Notify clients
-- Manage liquidated damages exposure
+Sofortige Maßnahmen erforderlich:
+- Baustellen und Materialien sichern
+- Ersatz-Nachunternehmer finden
+- Auftraggeber informieren
+- Vertragsstrafen-Exposition managen
 
-Options:
-A) Buy assets from insolvency administrator
-B) Take subcontractor work in-house
-C) Find alternative subcontractors (higher cost)
-D) Negotiate schedule extensions with clients
+Optionen:
+A) Vermögenswerte vom Insolvenzverwalter kaufen
+B) Nachunternehmerleistungen in Eigenleistung übernehmen
+C) Alternative Nachunternehmer finden (höhere Kosten)
+D) Terminverlängerungen mit Auftraggebern verhandeln
 
-How should we respond?"""
+Wie sollten wir reagieren?"""
             },
             {
                 "id": "digitalization_construction",
-                "name": "Construction Digitalization",
-                "category": "Technology",
-                "description": "BIM and digital construction",
-                "prompt": """We need to digitalize our construction process:
+                "name": "Digitalisierung im Bau",
+                "category": "Technologie",
+                "description": "BIM und digitales Bauen",
+                "prompt": """Wir müssen unsere Bauprozesse digitalisieren:
 
-Current state:
-- Limited BIM adoption
-- Paper-based site documentation
-- Excel project management
-- No real-time project visibility
+Aktueller Stand:
+- Begrenzte BIM-Nutzung
+- Papierbasierte Baudokumentation
+- Projektmanagement mit Excel
+- Keine Echtzeit-Projekttransparenz
 
-Digitalization options:
-A) Full BIM implementation (€10M, 3 years)
-B) Digital site management platform (€5M)
-C) Project management software (€2M)
-D) Integrated digital platform (€15M, 4 years)
+Digitalisierungsoptionen:
+A) Vollständige BIM-Implementierung (10 Mio. €, 3 Jahre)
+B) Digitale Baustellenmanagement-Plattform (5 Mio. €)
+C) Projektmanagement-Software (2 Mio. €)
+D) Integrierte digitale Plattform (15 Mio. €, 4 Jahre)
 
-Expected benefits:
-- 10% efficiency improvement
-- Better quality control
-- Real-time project visibility
-- Clash detection and rework reduction
+Erwarteter Nutzen:
+- 10% Effizienzsteigerung
+- Bessere Qualitätskontrolle
+- Echtzeit-Projekttransparenz
+- Kollisionserkennung und Nacharbeitsreduzierung
 
-What should our digitalization priorities be?"""
+Was sollten unsere Digitalisierungsprioritäten sein?"""
             },
             {
                 "id": "skilled_labor_shortage",
-                "name": "Skilled Labor Crisis",
-                "category": "HR",
-                "description": "Address construction worker shortage",
-                "prompt": """We cannot find enough skilled workers:
+                "name": "Fachkräftekrise",
+                "category": "Personal",
+                "description": "Fachkräftemangel im Baugewerbe begegnen",
+                "prompt": """Wir können nicht genug Fachkräfte finden:
 
-Current situation:
-- 200 open positions (15% of workforce)
-- Average worker age: 48
-- Apprentice applications down 50%
-- Project delays due to labor shortage
+Aktuelle Situation:
+- 200 offene Stellen (15% der Belegschaft)
+- Durchschnittsalter der Arbeiter: 48
+- Bewerbungen für Ausbildungsplätze um 50% gesunken
+- Projektverzögerungen durch Arbeitskräftemangel
 
-Options:
-A) Aggressive wage increases (20%+)
-B) Own training academy investment (€10M)
-C) International recruitment program
-D) Partnership with trade schools
-E) More automation and prefabrication
+Optionen:
+A) Aggressive Lohnerhöhungen (20%+)
+B) Eigene Ausbildungsakademie (10 Mio. € Investition)
+C) Internationales Rekrutierungsprogramm
+D) Partnerschaft mit Berufsschulen
+E) Mehr Automatisierung und Vorfertigung
 
-IG BAU considerations:
-- Wage negotiations upcoming
-- Minimum wage increases
-- Working condition demands
+IG BAU-Erwägungen:
+- Tarifverhandlungen stehen bevor
+- Mindestlohnerhöhungen
+- Forderungen zur Verbesserung der Arbeitsbedingungen
 
-What should our skilled labor strategy be?"""
+Was sollte unsere Fachkräftestrategie sein?"""
             },
             {
                 "id": "material_cost_crisis",
-                "name": "Material Cost Escalation",
-                "category": "Operations",
-                "description": "Handle material price increases",
-                "prompt": """Construction material prices are volatile:
+                "name": "Materialkostenexplosion",
+                "category": "Betrieb",
+                "description": "Umgang mit Materialpreissteigerungen",
+                "prompt": """Die Baumaterialpreise sind volatil:
 
-Current situation:
-- Steel prices up 50%
-- Timber prices doubled
-- Insulation materials scarce
-- Fixed-price contracts in place
+Aktuelle Situation:
+- Stahlpreise um 50% gestiegen
+- Holzpreise verdoppelt
+- Dämmmaterialien knapp
+- Pauschalpreisverträge bestehen
 
-Portfolio impact:
-- 20 active projects
-- €50M cost overrun projected
-- No price escalation clauses in 60% of contracts
-- Some projects now loss-making
+Portfolio-Auswirkungen:
+- 20 aktive Projekte
+- 50 Mio. € Kostenüberschreitung prognostiziert
+- Keine Preisgleitklauseln in 60% der Verträge
+- Einige Projekte jetzt verlustbringend
 
-Options:
-A) Renegotiate contracts with clients
-B) Value engineering to reduce costs
-C) Strategic material purchasing/hedging
-D) Accept losses, protect client relationships
-E) Slow-roll projects waiting for price drops
+Optionen:
+A) Verträge mit Auftraggebern nachverhandeln
+B) Value Engineering zur Kostensenkung
+C) Strategischer Materialeinkauf/Absicherung
+D) Verluste akzeptieren, Kundenbeziehungen schützen
+E) Projekte verlangsamen in Erwartung fallender Preise
 
-How should we manage material cost crisis?"""
+Wie sollten wir die Materialkostenkrise bewältigen?"""
             }
         ]
     }
@@ -3865,30 +3879,32 @@ def get_industry_templates(industry_id: str) -> list:
 def get_council_speaker_persona(industry_id: str) -> str:
     """Get council speaker persona, optionally customized for industry."""
     industry = INDUSTRIES.get(industry_id)
-    industry_name = industry["name"] if industry else "company"
+    industry_name = industry["name"] if industry else "Unternehmen"
 
-    return f"""You are the Council Speaker (Vorstandssprecher) facilitating the Executive Board meeting of a German {industry_name}.
+    return f"""Sie sind der Vorstandssprecher (Council Speaker), der die Vorstandssitzung eines deutschen Unternehmens der {industry_name} leitet.
 
-Your role is to:
-1. Listen to all executive perspectives carefully
-2. Identify areas of agreement and disagreement
-3. Weigh different perspectives based on the specific situation
-4. Synthesize a balanced recommendation that considers all viewpoints
-5. Highlight key trade-offs and risks
-6. Provide a clear, actionable decision or recommendation
+Ihre Rolle:
+1. Alle Perspektiven der Vorstandsmitglieder sorgfältig anhören
+2. Bereiche der Übereinstimmung und Meinungsverschiedenheit identifizieren
+3. Verschiedene Perspektiven situationsbezogen abwägen
+4. Eine ausgewogene Empfehlung synthetisieren, die alle Standpunkte berücksichtigt
+5. Zentrale Zielkonflikte und Risiken hervorheben
+6. Eine klare, umsetzbare Entscheidung oder Empfehlung abgeben
 
-Your style:
-- Neutral and objective facilitator
-- Focus on constructive synthesis
-- Acknowledge valid points from all perspectives
-- Clearly articulate the reasoning behind the final recommendation
-- Identify necessary follow-up actions and responsible parties
-- Consider German corporate governance requirements
+Ihr Stil:
+- Neutraler und objektiver Moderator
+- Fokus auf konstruktive Synthese
+- Berechtigte Punkte aller Perspektiven anerkennen
+- Die Begründung hinter der endgültigen Empfehlung klar artikulieren
+- Notwendige Folgemaßnahmen und Verantwortliche benennen
+- Deutsche Corporate-Governance-Anforderungen berücksichtigen
 
-Structure your response as:
-1. Summary of Key Perspectives
-2. Areas of Agreement
-3. Areas of Disagreement/Trade-offs
-4. Integrated Analysis
-5. Final Recommendation/Decision
-6. Next Steps and Responsibilities"""
+Strukturieren Sie Ihre Antwort wie folgt:
+1. Zusammenfassung der wichtigsten Perspektiven
+2. Bereiche der Übereinstimmung
+3. Bereiche der Meinungsverschiedenheit/Zielkonflikte
+4. Integrierte Analyse
+5. Endgültige Empfehlung/Entscheidung
+6. Nächste Schritte und Verantwortlichkeiten
+
+Antworten Sie stets auf Deutsch."""
