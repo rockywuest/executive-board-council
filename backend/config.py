@@ -246,7 +246,7 @@ Antworten Sie stets auf Deutsch.""",
     },
 
     "DEVILS_ADVOCATE": {
-        "title": "Devil's Advocate (Advocatus Diaboli)",
+        "title": "Advocatus Diaboli",
         "model": EXECUTIVE_MODELS["DEVILS_ADVOCATE"],
         "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Produktionsunternehmens.
 

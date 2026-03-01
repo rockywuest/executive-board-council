@@ -167,13 +167,13 @@ const t = TRANSLATIONS.de
 
 // Default executive info (manufacturing) - will be replaced by dynamic data
 const DEFAULT_EXECUTIVE_INFO = {
-  CEO: { title: 'Chief Executive Officer', german: 'Vorstandsvorsitzender', color: '#2563eb', icon: '👔' },
-  CFO: { title: 'Chief Financial Officer', german: 'Finanzvorstand', color: '#059669', icon: '💰' },
-  CTO: { title: 'Chief Technology Officer', german: 'Technischer Vorstand', color: '#7c3aed', icon: '⚙️' },
-  CHRO: { title: 'Chief Human Resources Officer', german: 'Personalvorstand', color: '#db2777', icon: '👥' },
-  CSO: { title: 'Chief Sales Officer', german: 'Vertriebsvorstand', color: '#ea580c', icon: '📈' },
-  CPO_CSCO: { title: 'Chief Purchasing & Supply Chain Officer', german: 'Einkaufs- und Supply Chain Vorstand', color: '#0891b2', icon: '🔗' },
-  DEVILS_ADVOCATE: { title: "Devil's Advocate", german: 'Advocatus Diaboli', color: '#dc2626', icon: '😈' },
+  CEO: { title: 'Vorstandsvorsitzender (CEO)', german: 'Vorstandsvorsitzender', color: '#2563eb', icon: '👔' },
+  CFO: { title: 'Finanzvorstand (CFO)', german: 'Finanzvorstand', color: '#059669', icon: '💰' },
+  CTO: { title: 'Technischer Vorstand (CTO)', german: 'Technischer Vorstand', color: '#7c3aed', icon: '⚙️' },
+  CHRO: { title: 'Personalvorstand (CHRO)', german: 'Personalvorstand', color: '#db2777', icon: '👥' },
+  CSO: { title: 'Vertriebsvorstand (CSO)', german: 'Vertriebsvorstand', color: '#ea580c', icon: '📈' },
+  CPO_CSCO: { title: 'Einkaufs- und Supply Chain Vorstand (CPO/CSCO)', german: 'Einkaufs- und Supply Chain Vorstand', color: '#0891b2', icon: '🔗' },
+  DEVILS_ADVOCATE: { title: 'Advocatus Diaboli', german: 'Advocatus Diaboli', color: '#dc2626', icon: '😈' },
 }
 
 // Icon mapping for industries
@@ -233,9 +233,9 @@ function ExecutiveCard({ role, title, response, confidence, uncertainties, isExp
 
   const getConfidenceClass = (conf) => {
     switch (conf?.toUpperCase()) {
-      case 'HIGH': return 'high'
-      case 'MEDIUM': return 'medium'
-      case 'LOW': return 'low'
+      case 'HIGH': case 'HOCH': return 'high'
+      case 'MEDIUM': case 'MITTEL': return 'medium'
+      case 'LOW': case 'NIEDRIG': return 'low'
       default: return ''
     }
   }
@@ -389,7 +389,7 @@ function RiskMatrix({ risks, t }) {
                 <td><span className="risk-category-badge">{risk.category}</span></td>
                 <td>
                   <span className={`risk-level-badge ${risk.risk_level || ''}`}>
-                    {risk.risk_level?.toUpperCase() || 'N/A'}
+                    {risk.risk_level?.toUpperCase() || 'k.A.'}
                   </span>
                 </td>
                 <td><span className="risk-owner-badge">{risk.owner}</span></td>
@@ -468,7 +468,7 @@ function StageProgress({ currentStage, stages }) {
   return (
     <div className="stage-progress" role="progressbar" aria-valuenow={currentStage + 1} aria-valuemin="1" aria-valuemax={stages.length}>
       <div className="sr-only" aria-live="polite">
-        Currently processing: {currentStageName}
+        Aktuelle Verarbeitung: {currentStageName}
       </div>
       {stages.map((stage, index) => (
         <div
@@ -1174,10 +1174,10 @@ function App() {
         const fileContents = await Promise.all(
           files.map(async (file) => {
             const text = await file.text()
-            return `\n\n--- Document: ${file.name} ---\n${text}`
+            return `\n\n--- Dokument: ${file.name} ---\n${text}`
           })
         )
-        fullSituation += '\n\nAttached Documents:' + fileContents.join('')
+        fullSituation += '\n\nAngehängte Dokumente:' + fileContents.join('')
       }
 
       // Build headers with auth token if available

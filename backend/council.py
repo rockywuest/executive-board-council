@@ -158,13 +158,13 @@ async def stage2_cross_evaluation(
 
     # Create mapping from label to role
     label_to_role = {
-        f"Perspective {label}": result['role']
+        f"Perspektive {label}": result['role']
         for label, result in zip(labels, stage1_results)
     }
 
     # Build the perspectives text with confidence info
     perspectives_text = "\n\n".join([
-        f"Perspective {label} ({result['title']}) [Confidence: {result.get('confidence', 'N/A')}]:\n{result['response']}"
+        f"Perspektive {label} ({result['title']}) [Konfidenz: {result.get('confidence', 'k.A.')}]:\n{result['response']}"
         for label, result in zip(labels, stage1_results)
     ])
 
@@ -257,7 +257,7 @@ def parse_structured_ranking(text: str) -> Dict[str, Any]:
                 # Convert ranking format
                 for item in parsed['ranking']:
                     if isinstance(item, dict) and 'perspective' in item:
-                        result['ranking'].append(f"Perspective {item['perspective']}")
+                        result['ranking'].append(f"Perspektive {item['perspective']}")
                     elif isinstance(item, str):
                         result['ranking'].append(item)
 
@@ -272,18 +272,18 @@ def parse_structured_ranking(text: str) -> Dict[str, Any]:
         parts = re.split(r'(?:FINAL\s+)?RANKING[:\s]*', text, flags=re.IGNORECASE)
         if len(parts) >= 2:
             ranking_section = parts[-1]
-            # Try numbered format: "1. Perspective A"
-            numbered_matches = re.findall(r'\d+\.\s*(?:Perspective\s+)?([A-Z])', ranking_section)
+            # Try numbered format: "1. Perspektive A"
+            numbered_matches = re.findall(r'\d+\.\s*(?:Perspektive\s+|Perspective\s+)?([A-Z])', ranking_section)
             if numbered_matches:
-                result['ranking'] = [f"Perspective {m}" for m in numbered_matches]
+                result['ranking'] = [f"Perspektive {m}" for m in numbered_matches]
                 return result
 
-    # Final fallback: Extract all "Perspective X" patterns in order of appearance
-    matches = re.findall(r'Perspective ([A-Z])', text)
+    # Final fallback: Extract all "Perspektive X" patterns in order of appearance
+    matches = re.findall(r'(?:Perspektive|Perspective) ([A-Z])', text)
     seen = set()
     for m in matches:
         if m not in seen:
-            result['ranking'].append(f"Perspective {m}")
+            result['ranking'].append(f"Perspektive {m}")
             seen.add(m)
 
     return result
@@ -517,12 +517,12 @@ async def stage3_council_speaker_synthesis(
 
     # Build comprehensive context for the Council Speaker
     stage1_text = "\n\n".join([
-        f"**{result['title']} ({result['role']})** [Confidence: {result.get('confidence', 'N/A')}]:\n{result['response']}"
+        f"**{result['title']} ({result['role']})** [Konfidenz: {result.get('confidence', 'k.A.')}]:\n{result['response']}"
         for result in stage1_results
     ])
 
     stage2_text = "\n\n".join([
-        f"**Evaluation by {result['title']} ({result['role']})**:\n{result['evaluation']}"
+        f"**Bewertung durch {result['title']} ({result['role']})**:\n{result['evaluation']}"
         for result in stage2_results
     ])
 

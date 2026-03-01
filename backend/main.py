@@ -57,8 +57,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Executive Board Council API",
-    description="Multi-LLM decision support system simulating a German executive board",
+    title="Vorstandsgremium API",
+    description="Multi-LLM Entscheidungsunterstützung mit simuliertem deutschen Unternehmensvorstand",
     version="2.0.0"
 )
 
@@ -143,7 +143,7 @@ async def root():
     """Health check endpoint."""
     return {
         "status": "ok",
-        "service": "Executive Board Council API",
+        "service": "Vorstandsgremium API",
         "version": "2.0.0",
         "features": ["debate_stage", "risk_matrix", "confidence_scores", "scenario_comparison", "devils_advocate"]
     }
@@ -232,19 +232,19 @@ async def get_tiers():
         "tiers": [
             {
                 "id": UserTier.ANONYMOUS,
-                "name": "Anonymous",
+                "name": "Anonym",
                 "price": 0,
                 "requests_per_day": UserTier.LIMITS[UserTier.ANONYMOUS]["daily"],
                 "requests_per_month": UserTier.LIMITS[UserTier.ANONYMOUS]["monthly"],
-                "features": ["Basic access", "2 requests per day"]
+                "features": ["Basiszugang", "2 Anfragen pro Tag"]
             },
             {
                 "id": UserTier.FREE,
-                "name": "Free",
+                "name": "Kostenlos",
                 "price": 0,
                 "requests_per_day": -1,
                 "requests_per_month": UserTier.LIMITS[UserTier.FREE]["monthly"],
-                "features": ["5 requests per month", "Meeting history", "Export functionality"]
+                "features": ["5 Anfragen pro Monat", "Sitzungsverlauf", "Exportfunktion"]
             },
             {
                 "id": UserTier.PRO,
@@ -253,7 +253,7 @@ async def get_tiers():
                 "price_yearly": 290,
                 "requests_per_day": -1,
                 "requests_per_month": UserTier.LIMITS[UserTier.PRO]["monthly"],
-                "features": ["50 requests per month", "Priority processing", "All export formats", "Email support"]
+                "features": ["50 Anfragen pro Monat", "Priorisierte Verarbeitung", "Alle Exportformate", "E-Mail-Support"]
             },
             {
                 "id": UserTier.ENTERPRISE,
@@ -262,7 +262,7 @@ async def get_tiers():
                 "price_yearly": 990,
                 "requests_per_day": -1,
                 "requests_per_month": -1,
-                "features": ["Unlimited requests", "Dedicated support", "Custom integrations", "SLA guarantee"]
+                "features": ["Unbegrenzte Anfragen", "Persönlicher Support", "Individuelle Integrationen", "SLA-Garantie"]
             }
         ]
     }
@@ -712,49 +712,49 @@ async def export_meeting(meeting_id: str, format: str = "json"):
 
 def generate_meeting_markdown(meeting: Dict[str, Any]) -> str:
     """Generate markdown export of a meeting."""
-    md = f"# Executive Board Meeting: {meeting['title']}\n\n"
-    md += f"**Date:** {meeting['created_at']}\n\n"
-    md += f"**Meeting ID:** {meeting['id']}\n\n"
+    md = f"# Vorstandssitzung: {meeting['title']}\n\n"
+    md += f"**Datum:** {meeting['created_at']}\n\n"
+    md += f"**Sitzungs-ID:** {meeting['id']}\n\n"
     md += "---\n\n"
 
     for i, discussion in enumerate(meeting.get('discussions', []), 1):
         if discussion.get('role') == 'user':
-            md += f"## Business Situation {i}\n\n"
+            md += f"## Geschäftssituation {i}\n\n"
             md += f"{discussion.get('content', '')}\n\n"
         elif discussion.get('role') == 'board':
-            md += "### Executive Perspectives\n\n"
+            md += "### Vorstandsperspektiven\n\n"
             for perspective in discussion.get('stage1_perspectives', []):
-                md += f"#### {perspective.get('title', perspective.get('role', 'Unknown'))}\n\n"
-                confidence = perspective.get('confidence', 'N/A')
-                md += f"**Confidence:** {confidence}\n\n"
+                md += f"#### {perspective.get('title', perspective.get('role', 'Unbekannt'))}\n\n"
+                confidence = perspective.get('confidence', 'k.A.')
+                md += f"**Konfidenz:** {confidence}\n\n"
                 md += f"{perspective.get('response', '')}\n\n"
 
-            md += "### Cross-Evaluations\n\n"
+            md += "### Gegenseitige Bewertungen\n\n"
             for evaluation in discussion.get('stage2_evaluations', []):
-                md += f"#### Evaluation by {evaluation.get('title', evaluation.get('role', 'Unknown'))}\n\n"
+                md += f"#### Bewertung durch {evaluation.get('title', evaluation.get('role', 'Unbekannt'))}\n\n"
                 md += f"{evaluation.get('evaluation', '')}\n\n"
 
             if discussion.get('debate_results'):
-                md += "### Debate Responses\n\n"
+                md += "### Debattenbeiträge\n\n"
                 for debate in discussion['debate_results']:
-                    md += f"#### {debate.get('title', debate.get('role', 'Unknown'))} responds\n\n"
+                    md += f"#### {debate.get('title', debate.get('role', 'Unbekannt'))} antwortet\n\n"
                     md += f"{debate.get('response', '')}\n\n"
 
             if discussion.get('risk_matrix', {}).get('risks'):
-                md += "### Risk Matrix\n\n"
-                md += "| Risk | Category | Likelihood | Impact | Owner |\n"
-                md += "|------|----------|------------|--------|-------|\n"
+                md += "### Risikomatrix\n\n"
+                md += "| Risiko | Kategorie | Wahrscheinlichkeit | Auswirkung | Verantwortlich |\n"
+                md += "|--------|-----------|-------------------|------------|----------------|\n"
                 for risk in discussion['risk_matrix']['risks']:
                     md += f"| {risk.get('description', '')} | {risk.get('category', '')} | "
                     md += f"{risk.get('likelihood', '')} | {risk.get('impact', '')} | {risk.get('owner', '')} |\n"
                 md += "\n"
 
-            md += "### Final Recommendation\n\n"
+            md += "### Schlussempfehlung\n\n"
             md += f"{discussion.get('stage3_synthesis', {}).get('response', '')}\n\n"
 
             md += "---\n\n"
 
-    md += "\n*Generated by Executive Board Council*\n"
+    md += "\n*Erstellt mit dem Vorstandsgremium*\n"
     return md
 
 

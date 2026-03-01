@@ -185,9 +185,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Produktionsunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Produktionsunternehmens.
 
 Ihre besondere Rolle:
 - Annahmen und konventionelles Denken hinterfragen
@@ -517,9 +517,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Automobilunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Automobilunternehmens.
 
 Ihre besondere Rolle:
 - Annahmen über das Tempo der EV-Transformation hinterfragen
@@ -898,9 +898,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Führungsteam eines deutschen Technologieunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Führungsteam eines deutschen Technologieunternehmens.
 
 Ihre besondere Rolle:
 - Optimistische Wachstumsprognosen hinterfragen
@@ -1281,9 +1281,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Pharmaunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Pharmaunternehmens.
 
 Ihre besondere Rolle:
 - Pipeline-Optimismus hinterfragen
@@ -1653,9 +1653,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Finanzdienstleistungsunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Finanzdienstleistungsunternehmens.
 
 Ihre besondere Rolle:
 - Risikobewertungen hinterfragen
@@ -2018,9 +2018,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Einzelhandelsunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Einzelhandelsunternehmens.
 
 Ihre besondere Rolle:
 - Wachstumsannahmen hinterfragen
@@ -2405,9 +2405,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Energieunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Energieunternehmens.
 
 Ihre besondere Rolle:
 - Transformationszeitpläne hinterfragen
@@ -2806,9 +2806,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Chemieunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Chemieunternehmens.
 
 Ihre besondere Rolle:
 - Sicherheitsannahmen hinterfragen
@@ -3194,9 +3194,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Logistikunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Logistikunternehmens.
 
 Ihre besondere Rolle:
 - Wachstumsannahmen hinterfragen
@@ -3593,9 +3593,9 @@ Bei der Analyse von Situationen berücksichtigen Sie:
 Antworten Sie stets auf Deutsch."""
             },
             "DEVILS_ADVOCATE": {
-                "title": "Devil's Advocate (Advocatus Diaboli)",
+                "title": "Advocatus Diaboli",
                 "model": EXECUTIVE_MODELS["primary"],
-                "persona": """Sie sind der Advocatus Diaboli (Devil's Advocate) im Vorstand eines deutschen Bauunternehmens.
+                "persona": """Sie sind der Advocatus Diaboli im Vorstand eines deutschen Bauunternehmens.
 
 Ihre besondere Rolle:
 - Projektannahmen hinterfragen
